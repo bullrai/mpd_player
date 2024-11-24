@@ -1,0 +1,19 @@
+# config/shortcuts.yaml
+
+globalz:
+  play_pause: "p"  # play musique
+  next_track: "Ctrl+Right"
+  previous_track: "Ctrl+Left"
+  volume_up: "+"
+  volume_down: "-"
+  playlist: "1"
+  library: "2"
+
+browser:
+  open_folder: "Enter"
+  go_back: "Backspace"
+
+playlist:
+  load_playlist: "Ctrl+L"
+  save_playlist: "Ctrl+S"
+  delete_playlist: "Ctrl+D"

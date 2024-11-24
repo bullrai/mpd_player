@@ -1,0 +1,65 @@
+---
+# Couleurs de l'interface
+colors:
+  library_text: "#ffffff"
+  library_selected: "#cb28cb"
+  library_text_selected: "#181318"
+  volume: "#ffffff"
+  song_tittle: "#ffffff"
+  border_window: "#cb28cb"
+  progress_bar: "#ff00ff"
+  progress_bar_fond: white
+  text_primary: white
+  text_secondary: "#cb28cb"
+  selected_text: "#181318"
+  background: "#1E1E1E"
+  header_background: "#282828"
+  background_button: "#333333"
+  selected_playlist: "#cb28cb"
+  selected_text_playlist: "#181318"
+  playlist_header_line: "#ffffff"
+  player_button: "#ffffff"
+  player_button_hover : "#cb28cb"
+#  button_play:
+#  button_play_hover: "#ffffff"
+#  button_stop: "#cb28cb"
+#  button_stop_hover: "#ffffff"
+#  button_next: "#cb28cb"
+#  button_next_hover: "#ffffff"
+#  button_prev: "#cb28cb"
+#  button_prev_hover: "#ffffff"
+#  button_pause: "#cb28cb"
+  colonne_text_colors:
+    track: "#FFA500"
+    title: "#cb28cb"
+    artist: "#2876cb"
+    album: "#39cb28"
+    time: "#c9cb28"
+    pos: "#FFA500"
+
+#hie_colonne_playlist:
+#  - ID
+# Style de police et tailles
+font:
+  family: "Montserrat"
+  size: 12
+
+
+# Largeur des colonnes
+#column_widths:
+#  track: 50
+#  title: 200
+#  artist: 150
+#  album: 100
+#  time: 60
+
+# Comportements et raccourcis
+behavior:
+  allow_column_resizing: true
+  stretch_columns:
+    - "title"
+    - "album"
+  shortcuts:
+    play_pause: "Space"
+    next: "Right"
+    previous: "Left"

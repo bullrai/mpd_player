@@ -1,0 +1,241 @@
+SplineFontDB: 3.2
+FontName: player_sym
+FullName: player_sym
+FamilyName: player_sym
+Weight: Regular
+Copyright: Copyright (c) 2024, bull
+UComments: "2024-11-19: Created with FontForge (http://fontforge.org)"
+Version: 001.000
+ItalicAngle: 0
+UnderlinePosition: -102.4
+UnderlineWidth: 51.2
+Ascent: 819
+Descent: 205
+InvalidEm: 0
+LayerCount: 2
+Layer: 0 0 "Arri+AOgA-re" 1
+Layer: 1 0 "Avant" 0
+XUID: [1021 752 -2073671624 2760069]
+StyleMap: 0x0000
+FSType: 0
+OS2Version: 0
+OS2_WeightWidthSlopeOnly: 0
+OS2_UseTypoMetrics: 1
+CreationTime: 1732005455
+ModificationTime: 1732023459
+OS2TypoAscent: 0
+OS2TypoAOffset: 1
+OS2TypoDescent: 0
+OS2TypoDOffset: 1
+OS2TypoLinegap: 92
+OS2WinAscent: 0
+OS2WinAOffset: 1
+OS2WinDescent: 0
+OS2WinDOffset: 1
+HheadAscent: 0
+HheadAOffset: 1
+HheadDescent: 0
+HheadDOffset: 1
+MarkAttachClasses: 1
+DEI: 91125
+Encoding: Custom
+UnicodeInterp: none
+NameList: AGL For New Fonts
+DisplaySize: -48
+AntiAlias: 1
+FitToEm: 0
+WinInfo: 0 18 6
+BeginPrivate: 0
+EndPrivate
+BeginChars: 256 8
+
+StartChar: play
+Encoding: 65 9654 0
+Width: 1024
+Flags: HWO
+LayerCount: 2
+Fore
+SplineSet
+512 819 m 0
+ 795 819 1024 590 1024 307 c 0
+ 1024 24 795 -205 512 -205 c 0
+ 229 -205 0 24 0 307 c 0
+ 0 590 229 819 512 819 c 0
+512 731 m 0
+ 278 731 88 541 88 307 c 0
+ 88 73 278 -117 512 -117 c 0
+ 746 -117 936 73 936 307 c 0
+ 936 541 746 731 512 731 c 0
+893 307 m 1
+ 321 -23 l 1
+ 321 637 l 1
+ 893 307 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: pause
+Encoding: 66 9208 1
+Width: 1024
+Flags: HW
+LayerCount: 2
+Fore
+SplineSet
+512 819 m 0
+ 795 819 1024 590 1024 307 c 0
+ 1024 24 795 -205 512 -205 c 0
+ 229 -205 0 24 0 307 c 0
+ 0 590 229 819 512 819 c 0
+512 731 m 0
+ 278 731 88 541 88 307 c 0
+ 88 73 278 -117 512 -117 c 0
+ 746 -117 936 73 936 307 c 0
+ 936 541 746 731 512 731 c 0
+441 1 m 1
+ 241 1 l 1
+ 241 614 l 1
+ 441 614 l 1
+ 441 1 l 1
+583 614 m 1
+ 783 614 l 1
+ 783 1 l 1
+ 583 1 l 1
+ 583 614 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: next
+Encoding: 67 9197 2
+Width: 1024
+Flags: HW
+LayerCount: 2
+Fore
+SplineSet
+651 240 m 1
+ 205 -0 l 1
+ 205 614 l 1
+ 651 375 l 1
+ 651 614 l 1
+ 819 614 l 1
+ 819 1 l 1
+ 651 1 l 1
+ 651 240 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: prev
+Encoding: 68 9198 3
+Width: 1024
+Flags: HW
+LayerCount: 2
+Fore
+SplineSet
+373 240 m 1
+ 373 1 l 1
+ 205 1 l 1
+ 205 614 l 1
+ 373 614 l 1
+ 373 375 l 1
+ 819 614 l 1
+ 819 -0 l 1
+ 373 240 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: stop
+Encoding: 69 9209 4
+Width: 1024
+Flags: HW
+LayerCount: 2
+Fore
+SplineSet
+205 -0 m 1
+ 205 614 l 1
+ 819 614 l 1
+ 819 -0 l 1
+ 205 -0 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: H
+Encoding: 72 8722 5
+Width: 1024
+Flags: HW
+LayerCount: 2
+Fore
+SplineSet
+205 81 m 1
+ 205 182 l 1
+ 819 182 l 1
+ 819 81 l 1
+ 205 81 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: I
+Encoding: 73 9633 6
+Width: 1024
+Flags: HW
+LayerCount: 2
+Fore
+SplineSet
+819 614 m 1
+ 819 -0 l 1
+ 205 -0 l 1
+ 205 614 l 1
+ 819 614 l 1
+772 535 m 1
+ 252 535 l 1
+ 252 48 l 1
+ 772 48 l 1
+ 772 535 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: J
+Encoding: 74 10006 7
+Width: 1024
+Flags: HW
+LayerCount: 2
+Fore
+SplineSet
+684 589 m 0
+ 697 602 714 609 732 609 c 0
+ 750 609 767 602 780 589 c 0
+ 785 584 789 580 794 575 c 0
+ 807 562 813 545 813 527 c 0
+ 813 509 807 492 794 479 c 0
+ 729 414 622 307 622 307 c 1
+ 622 307 729 200 794 135 c 0
+ 807 122 813 106 813 88 c 0
+ 813 70 807 53 794 40 c 0
+ 789 35 785 31 780 26 c 0
+ 767 13 750 6 732 6 c 0
+ 714 6 697 13 684 26 c 0
+ 619 91 512 197 512 197 c 1
+ 512 197 405 91 340 26 c 0
+ 327 13 310 6 292 6 c 0
+ 274 6 257 13 244 26 c 0
+ 239 31 235 35 230 40 c 0
+ 217 53 211 70 211 88 c 0
+ 211 106 217 122 230 135 c 0
+ 295 200 402 307 402 307 c 1
+ 402 307 295 414 230 479 c 0
+ 217 492 211 509 211 527 c 0
+ 211 545 217 562 230 575 c 0
+ 235 580 239 584 244 589 c 0
+ 257 602 274 609 292 609 c 0
+ 310 609 327 602 340 589 c 0
+ 405 524 512 417 512 417 c 1
+ 512 417 619 524 684 589 c 0
+EndSplineSet
+Validated: 1
+EndChar
+EndChars
+EndSplineFont
