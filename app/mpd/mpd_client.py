@@ -1,5 +1,5 @@
 # app/mpd/mpd_client.py
-
+import os
 from mpd import MPDClient
 
 class MPDClientWrapper:
@@ -111,6 +111,34 @@ class MPDClientWrapper:
         except Exception as e:
             print(f"Erreur lors de la récupération du morceau actuel : {e}")
             return {"title": "Inconnu", "artist": "Inconnu", "album": "Inconnu"}
+
+    def get_current_file(self):
+        """
+        Récupère le chemin complet du fichier audio en cours de lecture en utilisant MPD.
+
+        Returns:
+            str: Chemin complet du fichier audio en cours de lecture, ou None si le fichier n'est pas trouvé.
+        """
+
+        self.MUSIC_DIRECTORY = "/home/bull/Musique"
+        try:
+            # Utiliser MPD pour obtenir les informations de la chanson actuelle
+            current_song = self.get_current_song()
+            print("Informations de la chanson en cours :", current_song)
+
+            # Récupérer le chemin relatif du fichier audio
+            file_path = current_song.get("file")
+            if file_path:
+                # Construire le chemin complet en combinant avec le répertoire de musique
+                full_path = os.path.join(self.MUSIC_DIRECTORY, file_path)
+                print("Chemin complet du fichier audio :", full_path)
+                return full_path
+            else:
+                print("Erreur : Chemin du fichier introuvable dans les informations de la chanson.")
+                return None
+        except Exception as e:
+            print(f"Erreur lors de la récupération du fichier audio : {e}")
+            return None
 
     def get_current_playlist(self):
         """Récupère la playlist active actuelle depuis MPD."""

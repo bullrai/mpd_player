@@ -95,12 +95,14 @@ class MainWindow(QMainWindow):
 
 
         self.playlistac_button.clicked.connect(self.show_playlistac)
-        # self.playlist_button.clicked.connect(self.show_playlist)
         self.browser_button.clicked.connect(self.show_browser)
-
         button_box.addWidget(self.playlistac_button)
+
+        # self.playlist_button.clicked.connect(self.show_playlist)
         # button_box.addWidget(self.playlist_button)
+
         button_box.addWidget(self.browser_button)
+
         self.content_layout.addLayout(button_box)
 
         self.content_area = QStackedWidget()
