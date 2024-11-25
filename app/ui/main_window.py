@@ -12,7 +12,7 @@ import yaml
 from PySide6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget,
                                QVBoxLayout, QHBoxLayout, QPushButton,QStackedWidget
                                )
-from PySide6.QtGui import QScreen, QKeySequence, QShortcut, QIcon
+from PySide6.QtGui import QScreen, QKeySequence, QShortcut, QIcon, QFontDatabase, QFont
 from PySide6.QtCore import QSize, Qt
 from app.mpd.mpd_client import MPDClientWrapper
 # from app.ui.player_tab import PlayerTab
@@ -25,13 +25,22 @@ from app.utils.config_loader import config_instance
 
 from app.ui.custom_title_bar import CustomTitleBar  # Importer la barre d'en-tête personnalisée
 
+
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.mpd_client = MPDClientWrapper()
+
+        QFontDatabase.addApplicationFont("app/assets/images/Untitled1.ttf")
         background_color = config_instance.data["colors"]["background"]
         border_window = config_instance.data["colors"]["border_window"]
         font = config_instance.data["font"]["family"]
+        font_player = QFont("Untitled1", 24)
+        player_button = config_instance.data["colors"]["player_button"]
+        player_button_hover = config_instance.data["colors"]["player_button_hover"]
+
         # Configuration de la fenêtre principale
         self.setWindowTitle("Lecteur Audio MPD")
         self.resize(350, 600)
@@ -81,27 +90,28 @@ class MainWindow(QMainWindow):
         self.content_layout = QVBoxLayout()
         button_box = QHBoxLayout()
 
-        self.toggle_button = QPushButton("Cacher Contenu")
-        self.toggle_button.setStyleSheet(f"font-family: transparent;")
+        self.toggle_button = QPushButton("\u0046")
+
         self.toggle_button.clicked.connect(self.toggle_content_layout)
-        button_box.addWidget(self.toggle_button)
 
         self.playlistac_button = QPushButton("Playlist Active")
         self.playlistac_button.setStyleSheet(f"font-family: transparent;")
+        self.playlistac_button.clicked.connect(self.show_playlistac)
         # self.playlist_button = QPushButton("Playlists")
         # self.playlist_button.setStyleSheet(f"font-family: transparent;")
+        # self.playlist_button.clicked.connect(self.show_playlist)
         self.browser_button = QPushButton("Navigateur")
         self.browser_button.setStyleSheet(f"font-family: transparent;")
-
-
-        self.playlistac_button.clicked.connect(self.show_playlistac)
         self.browser_button.clicked.connect(self.show_browser)
-        button_box.addWidget(self.playlistac_button)
 
-        # self.playlist_button.clicked.connect(self.show_playlist)
+
+
+        button_box.addWidget(self.toggle_button)
+        button_box.addWidget(self.playlistac_button)
+        button_box.addWidget(self.browser_button)
+
         # button_box.addWidget(self.playlist_button)
 
-        button_box.addWidget(self.browser_button)
 
         self.content_layout.addLayout(button_box)
 
@@ -143,7 +153,7 @@ class MainWindow(QMainWindow):
         if self.is_content_hidden:
             self.toggle_button.setText("Afficher Contenu")
             print("change size")
-            self.setFixedSize(300, 280)
+            self.setFixedSize(350, 280)
         else:
             self.toggle_button.setText("Cacher Contenu")
             self.setFixedSize(350, 500)

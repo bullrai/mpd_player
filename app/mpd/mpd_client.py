@@ -99,18 +99,33 @@ class MPDClientWrapper:
             print(f"Erreur lors de la récupération de la progression : {e}")
             return 0.0
 
+
+
     def get_current_song(self):
-        """Récupère les informations du morceau en cours de lecture."""
+        """
+        Récupère les informations de la chanson actuelle, avec gestion des titres vides.
+        """
         try:
             song_info = self.client.currentsong()  # Utilise la commande currentsong de MPD
-            # print(song_info)
-            title = song_info.get("title", "Inconnu")
+            title = resolve_song_title(song_info)  # Résout le titre final
             artist = song_info.get("artist", "Inconnu")
             album = song_info.get("album", "Inconnu")
-            return song_info
+            file_path = song_info.get("file", "")
+
+            return {
+                "title": title,
+                "artist": artist,
+                "album": album,
+                "file": file_path
+            }
         except Exception as e:
             print(f"Erreur lors de la récupération du morceau actuel : {e}")
-            return {"title": "Inconnu", "artist": "Inconnu", "album": "Inconnu"}
+            return {
+                "title": "Inconnu",
+                "artist": "Inconnu",
+                "album": "Inconnu",
+                "file": ""
+            }
 
     def get_current_file(self):
         """
@@ -141,30 +156,28 @@ class MPDClientWrapper:
             return None
 
     def get_current_playlist(self):
-        """Récupère la playlist active actuelle depuis MPD."""
+        """
+        Récupère la playlist active actuelle depuis MPD, avec gestion des titres vides.
+        """
         try:
-
-
-            # Récupère la playlist active
-            playlist = self.client.playlistinfo()
-            # Structure la playlist en une liste de dictionnaires
+            playlist = self.client.playlistinfo()  # Récupère la playlist active
             formatted_playlist = []
             for song in playlist:
+                title = resolve_song_title(song)  # Résout le titre pour chaque chanson
                 formatted_playlist.append({
                     'track': song.get('track', ''),
-                    'title': song.get('title', 'Titre inconnu'),
+                    'title': title,
                     'artist': song.get('artist', 'Artiste inconnu'),
-                    'album': song.get('album', 'album inconnu'),
-                    'time': song.get('time', 'time inconnu'),
-                    'pos': song.get('pos', 'pos inconnu'),
-                    'id': song.get('id', 'id inconnu')
+                    'album': song.get('album', 'Album inconnu'),
+                    'time': song.get('time', 'Durée inconnue'),
+                    'pos': song.get('pos', 'Position inconnue'),
+                    'id': song.get('id', 'ID inconnu')
                 })
-            print("playlist active : ",formatted_playlist)
             return formatted_playlist
-
         except Exception as e:
             print(f"Erreur lors de la récupération de la playlist : {e}")
             return []
+
 
     def list_info(self, path=""):
         """Liste les dossiers et fichiers audio dans le chemin spécifié."""
@@ -196,3 +209,19 @@ class MPDClientWrapper:
             print(f"Erreur lors du chargement de la playlist {playlist_name}: {e}")
 
 
+def resolve_song_title(song_info):
+    """
+    Remplace les titres vides par le nom du fichier audio.
+    :param song_info: Dictionnaire contenant les métadonnées de la chanson.
+    :return: Le titre final (réel ou basé sur le nom du fichier).
+    """
+    # Récupérer les informations nécessaires
+    title = song_info.get("title", "").strip()  # Peut être vide ou absent
+    file_path = song_info.get("file", "")  # Chemin complet du fichier
+
+    # Si le titre est vide, utiliser le nom du fichier
+    if not title and file_path:
+        title = os.path.basename(file_path)  # Extraire uniquement le nom du fichier
+        title = os.path.splitext(title)[0]  # Retirer l'extension du fichier
+
+    return title

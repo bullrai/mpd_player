@@ -62,7 +62,7 @@ class WaveformProgressBar(QWidget):
         self.progress_bar = config_instance.data["colors"]["progress_bar"]
 
         self.music_manager = MusicStateManager(self.mpd_client)
-        self.music_manager.song_changed.connect(self.start_waveform_generation)
+        self.music_manager.song_changed.connect(self.check_name)
 
         # Démarrer la surveillance
         self.music_manager.start_monitoring()
@@ -98,7 +98,7 @@ class WaveformProgressBar(QWidget):
         """Met à jour la progression en fonction de la position du morceau."""
         # self.check_name()
         if self.progress != position: # TODO: vérivier le fonctionnement en détail
-            # print(position,self.progress)
+            print(position,self.progress)
             self.progress = position
             self.update()  # Redessiner la barre d'onde
 
