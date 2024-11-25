@@ -93,7 +93,7 @@ class BrowserTab(QWidget):
 
         try:
             # Récupère uniquement les dossiers et fichiers du chemin actuel
-            items = self.mpd_client.client.lsinfo(path)
+            items = self.mpd_client.list_info(path)
 
             for item in items:
                 if 'directory' in item:
@@ -147,7 +147,7 @@ class BrowserTab(QWidget):
             if item_text.startswith("[Dossier]"):
                 directory_name = item_text[10:]  # Enlève "[Dossier] " pour obtenir le nom réel
                 full_path = f"{self.current_path}/{directory_name}" if self.current_path else directory_name
-                self.mpd_client.client.add(full_path)  # Ajoute le dossier complet à la playlist
+                self.mpd_client.add_to_playlist(full_path)  # Ajoute le dossier complet à la playlist
                 print(f"Dossier ajouté à la playlist : {full_path}")
             else:
                 full_path = f"{self.current_path}/{item_text}" if self.current_path else item_text

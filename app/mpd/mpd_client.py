@@ -137,3 +137,34 @@ class MPDClientWrapper:
         except Exception as e:
             print(f"Erreur lors de la récupération de la playlist : {e}")
             return []
+
+    def list_info(self, path=""):
+        """Liste les dossiers et fichiers audio dans le chemin spécifié."""
+        try:
+            return self.client.lsinfo(path)
+        except Exception as e:
+            print(f"Erreur lors de la récupération des informations de {path}: {e}")
+            return []
+
+    def add_to_playlist(self, path):
+        """Ajoute un fichier ou un dossier à la playlist active."""
+        try:
+            self.client.add(path)
+        except Exception as e:
+            print(f"Erreur lors de l'ajout à la playlist : {e}")
+
+    def play_song_at(self, position):
+        """Joue la chanson à une position donnée dans la playlist."""
+        try:
+            self.client.play(position)
+        except Exception as e:
+            print(f"Erreur lors de la lecture de la chanson à la position {position}: {e}")
+
+    def load_playlist(self, playlist_name):
+        """Charge une playlist MPD."""
+        try:
+            self.client.load(playlist_name)
+        except Exception as e:
+            print(f"Erreur lors du chargement de la playlist {playlist_name}: {e}")
+
+

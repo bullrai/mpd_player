@@ -68,7 +68,8 @@ class PlaylistTab(QWidget):
         """Récupère les morceaux d'une playlist donnée."""
         try:
 
-            self.mpd_client.client.load(playlist_name)
+            self.mpd_client.load_playlist(playlist_name)
+
             return self.mpd_client.get_current_playlist()
         except Exception as e:
             print(f"Erreur lors du chargement de la playlist {playlist_name} : {e}")
@@ -109,7 +110,8 @@ class PlaylistTab(QWidget):
     def play_song(self, row):
         """Joue une chanson à partir de la playlist active."""
         try:
-            self.mpd_client.client.play(row)
+            self.mpd_client.play_song_at(row)
+
             QMessageBox.information(self, "Lecture", f"Lecture de la chanson à la position {row}.")
         except Exception as e:
             QMessageBox.critical(self, "Erreur", f"Impossible de lire la chanson : {e}")
@@ -129,7 +131,8 @@ class PlaylistTab(QWidget):
             # Efface et sauvegarde la playlist avec l'ordre mis à jour
             # self.mpd_client.client.clear()
             for song in model.playlist_data:
-                self.mpd_client.client.add(song.get("file"))
+                self.mpd_client.add_to_playlist(song.get("file"))
+
             self.playlist_manager.save_playlist(playlist_name)
             QMessageBox.information(self, "Succès", f"Playlist '{playlist_name}' enregistrée.")
         except Exception as e:

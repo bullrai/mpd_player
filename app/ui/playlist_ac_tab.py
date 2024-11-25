@@ -53,7 +53,8 @@ class PlaylistAcTab(QWidget):
         if index.isValid():
             song_position = index.row()  # Récupère la position dans la playlist
             try:
-                self.mpd_client.client.play(song_position)
+                self.mpd_client.play_song_at(song_position)
+
                 print(f"Lecture de la chanson à la position : {song_position}")
             except Exception as e:
                 print(f"Erreur lors de la lecture de la chanson : {e}")
