@@ -12,7 +12,7 @@ class Config:
 
     def load_config(self):
         # Spécifiez le chemin depuis la racine du projet
-        config_path = Path(__file__).parent.parent.parent / "config/config.yaml"
+        config_path = Path(__file__).parent.parent.parent / "app/assets/config/config.yaml"
 
         # Vérifiez l'existence du fichier et chargez-le
         if not config_path.is_file():

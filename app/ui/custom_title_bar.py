@@ -1,7 +1,7 @@
 # app/ui/custom_title_bar.py
-from PyQt5.QtCore import QSize
+from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton
-from future.standard_library import import_
+
 
 from PySide6.QtGui import QFontDatabase, QFont
 from PySide6.QtCore import Qt, QPoint

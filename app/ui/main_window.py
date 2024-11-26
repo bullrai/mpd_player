@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from PyQt5.QtWidgets import QBoxLayout
+
 
 # Ajouter le répertoire parent au PYTHONPATH
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))

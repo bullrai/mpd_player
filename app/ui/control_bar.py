@@ -1,8 +1,8 @@
 # app/ui/control_bar.py
 from pathlib import Path
 import threading
-import psutil
-from PyQt5.QtCore import QRect
+
+
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSlider, QPushButton, QMessageBox
 from PySide6.QtSvg import QSvgRenderer
@@ -218,10 +218,6 @@ class ControlBar(QWidget):
         # Initialiser le widget popup pour le slider de volume
         self.init_volume_popup()
         self.update_song_title()
-
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-        if 'python' in proc.info['name']:
-            print(proc.info)
 
     # def update_progress(self):
     #     """Met à jour la progression de la barre d'onde en fonction de la position actuelle du morceau."""
