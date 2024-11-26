@@ -91,17 +91,19 @@ class MainWindow(QMainWindow):
         button_box = QHBoxLayout()
 
         self.toggle_button = QPushButton("\u0046")
-
+        self.toggle_button.setStyleSheet(f"background-color: transparent;")
         self.toggle_button.clicked.connect(self.toggle_content_layout)
 
         self.playlistac_button = QPushButton("Playlist Active")
-        self.playlistac_button.setStyleSheet(f"font-family: transparent;")
+        self.playlistac_button.setStyleSheet(f"background-color: transparent;")
         self.playlistac_button.clicked.connect(self.show_playlistac)
+
         # self.playlist_button = QPushButton("Playlists")
         # self.playlist_button.setStyleSheet(f"font-family: transparent;")
         # self.playlist_button.clicked.connect(self.show_playlist)
+
         self.browser_button = QPushButton("Navigateur")
-        self.browser_button.setStyleSheet(f"font-family: transparent;")
+        self.browser_button.setStyleSheet(f"background-color: transparent;")
         self.browser_button.clicked.connect(self.show_browser)
 
 
