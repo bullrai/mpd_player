@@ -1,26 +1,24 @@
 # app/ui/control_bar.py
 from pathlib import Path
-import threading
+
 
 
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSlider, QPushButton, QMessageBox
-from PySide6.QtSvg import QSvgRenderer
+
 from PySide6.QtGui import QPainter, QColor, QPen , QFontDatabase, QFont
 from PySide6.QtCore import Qt, QSize, QPoint ,QTimer
 # from scipy.special import title
-import multiprocessing
+
 from app.mpd.mpd_client import MPDClientWrapper
 from app.mpd.volume import VolumeControl
 from app.utils.config_loader import config_instance
 from app.ui.waveform_widget import WaveformProgressBar
 from app.mpd.music_state_manager import MusicStateManager
 
-import numpy as np
-from pydub import AudioSegment
 import os
 
-import glob
+
 # Chemin global pour les images SVG
 image_path = Path("app/assets/images")
 
