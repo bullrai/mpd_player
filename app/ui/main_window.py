@@ -46,8 +46,8 @@ class MainWindow(QMainWindow):
         self.resize(350, 600)
         #
         # self.adjustSize()
-        self.setWindowFlags(Qt.FramelessWindowHint)  # Supprimer les bordures de la fenêtre
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        # self.setWindowFlags(Qt.FramelessWindowHint)  # Supprimer les bordures de la fenêtre
+        # self.setAttribute(Qt.WA_TranslucentBackground)
         # self.setStyleSheet(f"""
         #             QMainWindow {{
         #                 background-color: {background_color};
@@ -61,8 +61,8 @@ class MainWindow(QMainWindow):
         main_widget.setStyleSheet(f"""
                     #Container {{
                         background-color: {background_color};
-                        border: 1px solid {border_window};
-                        border-radius: 10px;  /* Ajustez le rayon des coins */
+                        /*border: 1px solid {border_window};
+                        border-radius: 10px;   Ajustez le rayon des coins */
                         
                     }}
                 """)
@@ -120,7 +120,7 @@ class MainWindow(QMainWindow):
         self.content_area = QStackedWidget()
         self.playlistac_tab = PlaylistAcTab(self.mpd_client)
         # self.playlist_tab = PlaylistTab(self.mpd_client)
-        self.browser_tab = BrowserTab(self.mpd_client, self.playlistac_tab)
+        self.browser_tab = BrowserTab(self.mpd_client, self.playlistac_tab) #, self.playlistac_tab
 
         self.content_area.addWidget(self.playlistac_tab)
         # self.content_area.addWidget(self.playlist_tab)
@@ -128,7 +128,7 @@ class MainWindow(QMainWindow):
         self.content_layout.addWidget(self.content_area)
 
         main_layout.addLayout(self.content_layout)
-        main_layout.addStretch()
+        # main_layout.addStretch()
 
         # Affichage initial
         # self.hide_content_layout()
@@ -166,6 +166,7 @@ class MainWindow(QMainWindow):
 
     def show_playlistac(self):
         """Affiche la section Playlist active dans la zone de contenu."""
+        print("view")
         self.content_area.setCurrentWidget(self.playlistac_tab)
 
     def show_playlist(self):
@@ -192,7 +193,7 @@ class MainWindow(QMainWindow):
 
     def load_shortcuts(self):
         """Charge les raccourcis depuis un fichier YAML."""
-        config_path = Path("config/shortcuts.yaml")
+        config_path = Path("app/assets/config/shortcuts.yaml")
         # print("config_path : ",config_path)
         try:
             with open(config_path, "r") as file:
@@ -210,7 +211,7 @@ class MainWindow(QMainWindow):
         # print("bzkbz : ",shortcuts)
         # Raccourcis globaux
         global_shortcuts = shortcuts.get("globalz", {})
-        # print("global_shortcuts : ",shortcuts)
+        print("global_shortcuts : ",shortcuts)
         # print(global_shortcuts.get("play_pause"))
         QShortcut(QKeySequence(global_shortcuts.get("play_pause")), self).activated.connect(self.toggle_play_pause)
         QShortcut(QKeySequence(global_shortcuts.get("next_track")), self).activated.connect(self.next_track)

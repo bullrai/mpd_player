@@ -187,12 +187,19 @@ class MPDClientWrapper:
             print(f"Erreur lors de la récupération des informations de {path}: {e}")
             return []
 
-    def add_to_playlist(self, path):
+    def add_to_playlist_active(self, path):
         """Ajoute un fichier ou un dossier à la playlist active."""
         try:
             self.client.add(path)
         except Exception as e:
-            print(f"Erreur lors de l'ajout à la playlist : {e}")
+            print(f"Erreur lors de l'ajout à la playlist active : {e}")
+
+    def clear_to_playlist_active(self):
+        """Vide la playlist active """
+        try:
+            self.client.clear()
+        except Exception as e:
+            print(f"Erreur lors de la suppréssion de la playlist active : {e}")
 
     def play_song_at(self, position):
         """Joue la chanson à une position donnée dans la playlist."""

@@ -1,119 +1,194 @@
 # app/ui/browser_tab.py
-
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QListWidget, QPushButton
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtWidgets import QTreeView, QVBoxLayout, QWidget, QMenu
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, Qt
 from app.mpd.mpd_client import MPDClientWrapper
-from app.utils.config_loader import config_instance
 
-class BrowserTab(QWidget):
-    def __init__(self, mpd_client: MPDClientWrapper, playlist_ac_tab):
+
+class FileNode:
+    """Représente un nœud dans l'arborescence (fichier ou dossier)."""
+
+    def __init__(self, name, path, is_directory, parent=None):
+        self.name = name  # Nom affiché dans la vue
+        self.path = path  # Chemin relatif pour MPD
+        self.is_directory = is_directory  # True si c'est un dossier
+        self.parent = parent  # Parent du nœud
+        self.children = []  # Liste des enfants
+        self.loaded = False  # Indique si les enfants ont été chargés
+
+    def add_child(self, child):
+        self.children.append(child)
+
+    def child_count(self):
+        return len(self.children)
+
+    def child(self, row):
+        return self.children[row] if 0 <= row < self.child_count() else None
+
+    def row(self):
+        if self.parent:
+            return self.parent.children.index(self)
+        return 0
+
+
+class FileSystemModel(QAbstractItemModel):
+    """Modèle hiérarchique pour QTreeView."""
+
+    def __init__(self, root_path, mpd_client):
         super().__init__()
         self.mpd_client = mpd_client
-        self.playlist_ac_tab = playlist_ac_tab  # Référence à PlaylistAcTab
-        self.current_path = ""  # Commence dans le dossier racine
+        self.root_node = FileNode("Bibliothèque musicale", root_path, True)  # Racine de l'arbre
 
-        self.library_text = config_instance.data["colors"]["library_text"]
-        self.library_selected = config_instance.data["colors"]["library_selected"]
-        self.library_text_selected = config_instance.data["colors"]["library_text_selected"]
-        self.font =  config_instance.data["font"]["family"]
+        # Charger les éléments racine
+        self.load_children(self.root_node)
 
-        self.setup_ui()
-        self.load_library()  # Charger la bibliothèque à la racine au démarrage
-        self.setup_shortcuts()
+    def rowCount(self, parent):
+        node = parent.internalPointer() if parent.isValid() else self.root_node
+        return node.child_count()
 
-    def setup_ui(self):
-        # Layout principal
-        layout = QVBoxLayout()
+    def columnCount(self, parent):
+        return 1  # Une seule colonne (nom des fichiers/dossiers)
 
-        # Bouton Retour
-        self.back_button = QPushButton("Retour")
-        self.back_button.setVisible(False)  # Masqué par défaut
-        self.back_button.clicked.connect(self.go_to_parent_directory)
-        layout.addWidget(self.back_button)
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        node = index.internalPointer()
+        if role == Qt.DisplayRole:
+            return node.name
+        return None
 
-        # Titre de l'onglet
-        layout.addWidget(QLabel("Navigateur de bibliothèque"))
+    def index(self, row, column, parent):
+        if not self.hasIndex(row, column, parent):
+            return QModelIndex()
+        parent_node = parent.internalPointer() if parent.isValid() else self.root_node
+        child_node = parent_node.child(row)
+        return self.createIndex(row, column, child_node) if child_node else QModelIndex()
 
-        # Liste des dossiers/fichiers
-        self.library_list = QListWidget()
-        self.library_list.setStyleSheet(f"""
-            QListWidget {{
-                background-color: transparent;
-                color: {self.library_text};
-                font-family: {self.font};
-            }}
-            QListWidget::item:selected {{
-                background-color: {self.library_selected};
-                color: {self.library_text_selected};
-            }}
-        """)
-        self.library_list.itemClicked.connect(self.open_directory_or_file)
-        layout.addWidget(self.library_list)
+    def parent(self, index):
+        if not index.isValid():
+            return QModelIndex()
+        node = index.internalPointer()
+        parent_node = node.parent if node else None
+        if parent_node == self.root_node or not parent_node:
+            return QModelIndex()
+        return self.createIndex(parent_node.row(), 0, parent_node)
 
-        # Appliquer le layout à l'onglet
-        self.setLayout(layout)
+    def hasChildren(self, parent):
+        node = parent.internalPointer() if parent.isValid() else self.root_node
+        return node.is_directory
 
-    def setup_shortcuts(self):
-        """Configure les raccourcis pour la navigation clavier et l'ajout à la playlist."""
-        # Raccourci pour ajouter à la playlist avec la touche '0'
-        add_to_playlist_shortcut = QShortcut(QKeySequence("0"), self)
-        add_to_playlist_shortcut.activated.connect(self.add_selected_to_playlist)
-
-        # Navigation dans la liste avec les flèches et les touches Entrée/Retour Arrière
-        self.setFocusPolicy(Qt.StrongFocus)
-
-    def keyPressEvent(self, event):
-        """Gère les événements de touches pour la navigation dans la liste."""
-        if event.key() == Qt.Key_Down:
-            # Flèche Bas : se déplacer vers le bas dans la liste
-            next_row = (self.library_list.currentRow() + 1) % self.library_list.count()
-            self.library_list.setCurrentRow(next_row)
-        elif event.key() == Qt.Key_Up:
-            # Flèche Haut : se déplacer vers le haut dans la liste
-            previous_row = (self.library_list.currentRow() - 1) % self.library_list.count()
-            self.library_list.setCurrentRow(previous_row)
-        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            # Entrée : ouvrir le dossier ou sélectionner le fichier
-            current_item = self.library_list.currentItem()
-            if current_item:
-                self.open_directory_or_file(current_item)
-        elif event.key() == Qt.Key_Backspace:
-            # Retour Arrière : revenir au dossier parent
-            self.go_to_parent_directory()
-        else:
-            # Appel de la méthode parente pour les autres touches
-            super().keyPressEvent(event)
-
-    def load_library(self, path=""):
-        """Charge les dossiers et fichiers audio dans le chemin spécifié sans descendre dans les sous-dossiers."""
-        self.library_list.clear()
-        self.current_path = path
-        self.back_button.setVisible(bool(path))  # Affiche le bouton Retour si on n'est pas à la racine
-
+    def load_children(self, parent_node):
+        """Charge les enfants d'un nœud."""
+        if not parent_node.is_directory or parent_node.loaded:
+            return
         try:
-            # Récupère uniquement les dossiers et fichiers du chemin actuel
-            items = self.mpd_client.list_info(path)
-
+            # Utiliser uniquement le chemin relatif pour MPD
+            items = self.mpd_client.client.lsinfo(parent_node.path)
             for item in items:
                 if 'directory' in item:
-                    # Affiche les dossiers uniquement
-                    self.library_list.addItem(f"[Dossier] {item['directory'].split('/')[-1]}")
+                    child_node = FileNode(
+                        name=item['directory'].split("/")[-1],
+                        path=item['directory'],  # Chemin relatif
+                        is_directory=True,
+                        parent=parent_node
+                    )
+                    parent_node.add_child(child_node)
                 elif 'file' in item and self.is_audio_file(item['file']):
-                    # Affiche uniquement les fichiers audio
-                    self.library_list.addItem(item['file'].split('/')[-1])
-
-            # Mettre le focus sur le premier élément s'il y a des éléments
-            if self.library_list.count() > 0:
-                self.library_list.setCurrentRow(0)
-
+                    child_node = FileNode(
+                        name=item['file'].split("/")[-1],
+                        path=item['file'],  # Chemin relatif
+                        is_directory=False,
+                        parent=parent_node
+                    )
+                    parent_node.add_child(child_node)
+            parent_node.loaded = True
         except Exception as e:
-            print(f"Erreur en chargeant la bibliothèque musicale : {e}")
+            print(f"Erreur lors du chargement des enfants : {e}")
+
+    def canFetchMore(self, parent):
+        """Indique si le nœud peut charger plus de données."""
+        node = parent.internalPointer() if parent.isValid() else self.root_node
+        return node.is_directory and not node.loaded
+
+    def fetchMore(self, parent):
+        """Charge plus de données pour un nœud."""
+        node = parent.internalPointer() if parent.isValid() else self.root_node
+        if node.is_directory and not node.loaded:
+            self.beginInsertRows(parent, 0, len(node.children) - 1)
+            self.load_children(node)
+            self.endInsertRows()
 
     def is_audio_file(self, filename):
         """Vérifie si le fichier a une extension audio valide."""
         audio_extensions = {".mp3", ".flac", ".wav", ".aac", ".ogg"}
         return any(filename.lower().endswith(ext) for ext in audio_extensions)
+
+
+class BrowserTab(QWidget):
+    """Interface utilisateur pour afficher la bibliothèque."""
+
+    def __init__(self, mpd_client:MPDClientWrapper, playlist_ac_tab):
+        super().__init__()
+        self.mpd_client = mpd_client
+        self.root_path = ""  # Chemin racine relatif pour MPD (vide pour la racine)
+        self.playlist_ac_tab = playlist_ac_tab  # Référence à PlaylistAcTab
+        self.setup_ui()
+
+    def setup_ui(self):
+        layout = QVBoxLayout()
+
+        # Initialisation de la vue
+        self.tree_view = QTreeView()
+        self.model = FileSystemModel(self.root_path, self.mpd_client)
+        self.tree_view.setModel(self.model)
+        self.tree_view.setUniformRowHeights(True)
+        self.tree_view.setStyleSheet("""
+                            /*QTreeView::branch:closed:has-children {
+                                image: url('folder_closed.png');
+                                margin: 0px;
+                            }
+                            QTreeView::branch:open:has-children {
+                                image: url('folder_open.png');
+                                margin: 0px;
+                            }*/
+
+                            QHeaderView::section {
+                                background-color: #1E1E1E; /* Couleur de fond */
+                                color: #1E1E1E;           /* Couleur du texte */
+                                border: 1px ; /* Bordure autour des en-têtes */
+                                padding: 0px;             /* Espacement interne */
+                                height: 1px;
+                            }
+
+                            QScrollBar:vertical {
+                               border: none;
+                               background: transparent;
+                               width: 8px;
+                               margin: 0px 0px 0px 0px;
+                            }
+                            QScrollBar::handle:vertical {
+                               background: #cb28cb;
+                               min-height: 20px;
+                               border-radius: 4px;
+                            }
+                            QTreeView::item {
+                                padding: 4px;  /* Ajoute un espacement vertical et horizontal */
+                            }
+                            QTreeView {
+                               font-family: "Arial";
+                               font-size: 14px;
+                               color: #ffffff;
+                               background-color: transparent;
+                               alternate-background-color: transparent;
+                            }
+                       """)
+
+        self.tree_view.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tree_view.customContextMenuRequested.connect(self.open_context_menu)
+
+        # Ajouter la vue au layout
+        layout.addWidget(self.tree_view)
+        self.setLayout(layout)
+
 
     def open_directory_or_file(self, item):
         """Ouvre un dossier ou traite un fichier lorsqu'un élément est cliqué."""
@@ -136,23 +211,101 @@ class BrowserTab(QWidget):
         else:
             # Si on est déjà à la racine, on définit le chemin vide
             parent_path = ""
-        
+
         self.load_library(parent_path)
 
+    def open_context_menu(self, position):
+        """Affiche le menu contextuel."""
+        # Créer le menu
+        menu = QMenu(self)
+
+        # Ajouter les options au menu
+        add_action = menu.addAction("Add to playlist AC")
+        replace_action = menu.addAction("Replace playlist AC")
+
+        # Connecter les actions aux fonctions
+        add_action.triggered.connect(self.add_selected_to_playlist)
+        replace_action.triggered.connect(self.replace_playlist_with_selected)
+
+        # Afficher le menu à la position du clic
+        menu.exec(self.tree_view.viewport().mapToGlobal(position))
+
     def add_selected_to_playlist(self):
-        """Ajoute l'élément sélectionné à la playlist active de MPD."""
-        current_item = self.library_list.currentItem()
-        if current_item:
-            item_text = current_item.text()
-            if item_text.startswith("[Dossier]"):
-                directory_name = item_text[10:]  # Enlève "[Dossier] " pour obtenir le nom réel
-                full_path = f"{self.current_path}/{directory_name}" if self.current_path else directory_name
-                self.mpd_client.add_to_playlist(full_path)  # Ajoute le dossier complet à la playlist
-                print(f"Dossier ajouté à la playlist : {full_path}")
-            else:
-                full_path = f"{self.current_path}/{item_text}" if self.current_path else item_text
-                self.mpd_client.client.add(full_path)  # Ajoute le fichier audio à la playlist
-                print(f"Fichier ajouté à la playlist : {full_path}")
+        """
+        Ajoute les éléments sélectionnés (fichiers uniquement) à la playlist.
+        Les éléments sont extraits du modèle `FileSystemModel`.
+        """
+        # Obtenez les indices sélectionnés dans le QTreeView
+        selected_indexes = self.tree_view.selectionModel().selectedIndexes()
+
+        # Vérifiez que le modèle est un FileSystemModel
+        if not isinstance(self.tree_view.model(), FileSystemModel):
+            print("Le modèle actuel n'est pas un FileSystemModel.")
+            return
+
+        # Parcourez les indices sélectionnés
+        for index in selected_indexes:
+            # Récupérez le nœud via l'index
+            node = index.internalPointer()  # internalPointer() retourne un FileNode
+            if node and not node.is_directory:  # Ajouter uniquement les fichiers
+                try:
+                    self.mpd_client.add_to_playlist_active(node.path)  # Ajouter le chemin relatif à MPD
+                    print(f"Ajouté à la playlist : {node.path}")
+                except Exception as e:
+                    print(f"Erreur lors de l'ajout à la playlist : {e}")
             # Actualiser PlaylistAcTab après l'ajout
             if self.playlist_ac_tab:
                 self.playlist_ac_tab.update_playlist()
+
+    def replace_playlist_with_selected(self):
+        """Remplace la playlist active avec les éléments sélectionnés."""
+        try:
+            self.mpd_client.clear_to_playlist_active()  # Vider la playlist active
+            print("Playlist active effacée.")
+            self.add_selected_to_playlist()  # Ajouter les nouveaux fichiers
+        except Exception as e:
+            print(f"Erreur lors du remplacement de la playlist : {e}")
+
+
+
+
+    # def setup_shortcuts(self):
+    #     """Configure les raccourcis pour la navigation clavier et l'ajout à la playlist."""
+    #     # Raccourci pour ajouter à la playlist avec la touche '0'
+    #     add_to_playlist_shortcut = QShortcut(QKeySequence("0"), self)
+    #     add_to_playlist_shortcut.activated.connect(self.add_selected_to_playlist)
+
+    #     # Navigation dans la liste avec les flèches et les touches Entrée/Retour Arrière
+    #     self.setFocusPolicy(Qt.StrongFocus)
+    #
+    # def keyPressEvent(self, event):
+    #     """Gère les événements de touches pour la navigation dans la liste."""
+    #     if event.key() == Qt.Key_Down:
+    #         # Flèche Bas : se déplacer vers le bas dans la liste
+    #         next_row = (self.library_list.currentRow() + 1) % self.library_list.count()
+    #         self.library_list.setCurrentRow(next_row)
+    #     elif event.key() == Qt.Key_Up:
+    #         # Flèche Haut : se déplacer vers le haut dans la liste
+    #         previous_row = (self.library_list.currentRow() - 1) % self.library_list.count()
+    #         self.library_list.setCurrentRow(previous_row)
+    #     elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+    #         # Entrée : ouvrir le dossier ou sélectionner le fichier
+    #         current_item = self.library_list.currentItem()
+    #         if current_item:
+    #             self.open_directory_or_file(current_item)
+    #     elif event.key() == Qt.Key_Backspace:
+    #         # Retour Arrière : revenir au dossier parent
+    #         self.go_to_parent_directory()
+    #     else:
+    #         # Appel de la méthode parente pour les autres touches
+    #         super().keyPressEvent(event)
+
+
+
+    # def is_audio_file(self, filename):
+    #     """Vérifie si le fichier a une extension audio valide."""
+    #     audio_extensions = {".mp3", ".flac", ".wav", ".aac", ".ogg"}
+    #     return any(filename.lower().endswith(ext) for ext in audio_extensions)
+
+
+

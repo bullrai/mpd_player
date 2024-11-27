@@ -8,6 +8,10 @@ globalz:
   volume_down: "-"
   playlist: "1"
   library: "2"
+  #TODO: dois être implementer
+  show_hide_playlist: "/"
+  reset_playlist_active: "s"
+
 
 browser:
   open_folder: "Enter"

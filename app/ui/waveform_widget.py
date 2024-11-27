@@ -98,7 +98,7 @@ class WaveformProgressBar(QWidget):
         """Met à jour la progression en fonction de la position du morceau."""
         # self.check_name()
         if self.progress != position: # TODO: vérivier le fonctionnement en détail
-            print(position,self.progress)
+            # print(position,self.progress)
             self.progress = position
             self.update()  # Redessiner la barre d'onde
 

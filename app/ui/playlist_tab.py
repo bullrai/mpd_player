@@ -131,7 +131,7 @@ class PlaylistTab(QWidget):
             # Efface et sauvegarde la playlist avec l'ordre mis à jour
             # self.mpd_client.client.clear()
             for song in model.playlist_data:
-                self.mpd_client.add_to_playlist(song.get("file"))
+                self.mpd_client.add_to_playlist_active(song.get("file"))
 
             self.playlist_manager.save_playlist(playlist_name)
             QMessageBox.information(self, "Succès", f"Playlist '{playlist_name}' enregistrée.")
