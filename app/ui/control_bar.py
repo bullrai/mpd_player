@@ -14,6 +14,7 @@ from app.mpd.mpd_client import MPDClientWrapper
 from app.mpd.volume import VolumeControl
 from app.utils.config_loader import config_instance
 from app.ui.waveform_widget import WaveformProgressBar
+from app.ui.volume_widget import VolumeWidget
 from app.mpd.music_state_manager import MusicStateManager
 
 import os
@@ -99,10 +100,11 @@ class ControlBar(QWidget):
         song_layout = QHBoxLayout()
 
         self.song_title = QLabel("tite du son")  # TODO : améliorer
-        self.song_title.setFixedSize(300, 20)
+        # self.song_title.setFixedSize(300, 20)
         self.song_title.setStyleSheet(f"""
                         QLabel {{
                             font-family: {font};
+                            font-size: 16px;
                             background-color: transparent;
                             color: {song_tittle};
                             border: none;
@@ -111,6 +113,10 @@ class ControlBar(QWidget):
 
         song_layout.addWidget(self.song_title)
         main_layout.addLayout(song_layout)
+        self.volume_widget = VolumeWidget(self.mpd_client)
+        self.volume_widget.setStyleSheet("background-color: red")
+        song_layout.addWidget(self.volume_widget)
+
         main_layout.addSpacing(10)
         # Layout de la barre de contrôle
         control_layout = QHBoxLayout()
@@ -182,18 +188,19 @@ class ControlBar(QWidget):
         self.volume_box.addWidget(self.repeat_button)
 
         # Bouton de volume # TODO: enlever le slider et le remplacer par un scroll
-        self.volume_button = QPushButton(f"Volume: {self.volume_control.get_volume()}%")
-        self.volume_button.setFixedSize(100, 30)
-        self.volume_button.setStyleSheet(f"""
-                QPushButton {{
-                    color: {color_volume};
-                    font-family: {font};
-                    background-color: transparent;
-                    border: none;
-                }}
-            """)
-        self.volume_button.clicked.connect(self.show_volume_popup)
-        self.volume_box.addWidget(self.volume_button)
+
+        # self.volume_widget.setFixedHeight(50)
+        # self.volume_widget.setFixedWidth(50)
+        # self.volume_button.setFixedSize(100, 30)
+        # self.volume_button.setStyleSheet(f"""
+        #         QPushButton {{
+        #             color: {color_volume};
+        #             font-family: {font};
+        #             background-color: transparent;
+        #             border: none;
+        #         }}
+        #     """)
+        # self.volume_button.clicked.connect(self.show_volume_popup)
 
         ## Bouton resize
         # self.button_resize = QPushButton("resize")

@@ -114,7 +114,7 @@ class MainWindow(QMainWindow):
 
         # button_box.addWidget(self.playlist_button)
 
-
+        # main_layout.addStretch()
         self.content_layout.addLayout(button_box)
 
         self.content_area = QStackedWidget()

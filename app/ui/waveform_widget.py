@@ -3,9 +3,10 @@ import multiprocessing
 import numpy as np
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QPainter, QColor, QPen
+from PySide6.QtGui import QPainter, QColor, QPen, QMouseEvent
 # from networkx import config
 from pydub import AudioSegment
+from app.mpd.mpd_client import MPDClientWrapper
 from app.utils.config_loader import config_instance
 from app.mpd.music_state_manager import MusicStateManager
 
@@ -47,12 +48,13 @@ def generate_waveform_process(audio_file, num_bars, queue):
 
 
 class WaveformProgressBar(QWidget):
-    def __init__(self, mpd_client, audio_file, duration, parent=None):
+    def __init__(self, mpd_client:MPDClientWrapper, audio_file, duration, parent=None):
         super().__init__(parent)
         self.mpd_client = mpd_client
         self.audio_file = audio_file
         self.name_play = self.mpd_client.get_current_song().get("title")
-        self.duration = duration
+        self.duration = self.mpd_client.get_duration()
+        print("duration : ",self.duration)
         self.progress = 0
         self.progress_0 = 0
         self.num_bars = 80
@@ -63,6 +65,8 @@ class WaveformProgressBar(QWidget):
 
         self.music_manager = MusicStateManager(self.mpd_client)
         self.music_manager.song_changed.connect(self.check_name)
+
+        self.is_dragging = False  # Indique si la souris est maintenue enfoncée
 
         # Démarrer la surveillance
         self.music_manager.start_monitoring()
@@ -90,14 +94,14 @@ class WaveformProgressBar(QWidget):
     def update_progress(self):
         """Met à jour la progression en fonction de la position actuelle du morceau."""
 
-        progress = self.mpd_client.get_progress()  # Obtenir la progression de 0 à 1
+        progress = self.mpd_client.get_progress()  # Obtenir la progression de 0 à 1.
 
         self.set_progress(progress)
 
     def set_progress(self, position):
         """Met à jour la progression en fonction de la position du morceau."""
         # self.check_name()
-        if self.progress != position: # TODO: vérivier le fonctionnement en détail
+        if self.progress != position: # TODO: vérifier le fonctionnement en détail
             # print(position,self.progress)
             self.progress = position
             self.update()  # Redessiner la barre d'onde
@@ -112,7 +116,7 @@ class WaveformProgressBar(QWidget):
 
     def start_waveform_generation(self):
         """Démarre le processus pour générer la forme d'onde."""
-
+        self.duration = self.mpd_client.get_duration()
         self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)
         self.process = multiprocessing.Process(
             target=generate_waveform_process,
@@ -123,7 +127,7 @@ class WaveformProgressBar(QWidget):
 
 
     def check_name(self):
-        """Vérifie si le morceau a changé et regénère l'onde si nécessaire."""
+        """Vérifie si le morceau a changé et régénère l'onde si nécessaire."""
         current_name = self.mpd_client.get_current_song().get("title")
         if self.name_play != current_name:
             print("Nouveau morceau détecté. Mise à jour de la forme d'onde.")
@@ -158,4 +162,41 @@ class WaveformProgressBar(QWidget):
 
         painter.end()
 
+
+    # def mousePressEvent(self, event: QMouseEvent):
+    #     """Gère le clic de la souris pour définir la position de lecture."""
+    #     if event.button() == Qt.LeftButton:
+    #         self.is_dragging = True  # Activer le suivi du clic
+    #         self.update_position_from_mouse(event.x())
+    #
+    # def mouseMoveEvent(self, event: QMouseEvent):
+    #     """Gère le déplacement de la souris tout en maintenant le clic."""
+    #     if self.is_dragging:  # Si on est en train de cliquer
+    #         self.update_position_from_mouse(event.x())
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        """Arrête le suivi lorsque le clic est relâché."""
+        if event.button() == Qt.LeftButton:
+            self.update_position_from_mouse(event.x())
+            self.is_dragging = False  # Désactiver le suivi du clic
+
+    def update_position_from_mouse(self, x):
+        """Met à jour la position de lecture en fonction de la position de la souris."""
+        # Calculer la progression en fonction de la position de la souris
+        relative_position = x / self.width()
+        print("relative_position : ",self.duration)
+        relative_position = max(0, min(1, relative_position))  # Limiter entre 0 et 1.
+        print("relative_position111 : ", relative_position)
+        new_position = float(relative_position * self.duration)  # Position en secondes
+        print("new_position : ", relative_position)
+
+        # Mettre à jour la progression
+        self.set_progress(relative_position)
+
+        # Envoyer la position à MPD
+        try:
+            self.mpd_client.set_progress(new_position)
+            print(f"Position de lecture mise à jour : {new_position}s")
+        except Exception as e:
+            print(f"Erreur lors de la mise à jour de la position de lecture : {e}")
 

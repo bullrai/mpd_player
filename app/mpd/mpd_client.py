@@ -80,6 +80,15 @@ class MPDClientWrapper:
         elapsed = float(status.get("elapsed", 0))
         return elapsed
 
+    def get_duration(self):
+        try:
+            status = self.client.status()
+            print("status : ",status)
+            duration = int(status.get("time", "0:0").split(":")[1])  # Durée totale en secondes
+            return duration
+        except Exception as e:
+            print(f"Erreur lors de la récupération de la durée : {e}")
+
     def get_progress(self):
         """
         Récupère la progression actuelle du morceau en cours de lecture.
@@ -91,7 +100,6 @@ class MPDClientWrapper:
             status = self.client.status()
             elapsed = float(status.get("elapsed", 0))  # Temps écoulé en secondes
             duration = float(status.get("duration", status["time"].split(":")[1]))  # Durée totale en secondes
-
             # Calcul de la progression en fraction (0 à 1)
             progress = elapsed / duration if duration > 0 else 0
             return progress
@@ -99,7 +107,15 @@ class MPDClientWrapper:
             print(f"Erreur lors de la récupération de la progression : {e}")
             return 0.0
 
+    def set_progress(self, new_position):
+        # Envoyer la position à MPD
 
+        print("new_position : ",new_position)
+        try:
+            self.client.seekcur(new_position)
+            print(f"Position de lecture mise à jour : {new_position}s")
+        except Exception as e:
+            print(f"Erreur lors de la mise à jour de la position de lecture : {e}")
 
     def get_current_song(self):
         """
