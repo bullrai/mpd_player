@@ -1,5 +1,7 @@
 import os
 import multiprocessing
+from time import sleep
+
 import numpy as np
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import QTimer, Qt
@@ -101,10 +103,17 @@ class WaveformProgressBar(QWidget):
     def set_progress(self, position):
         """Met à jour la progression en fonction de la position du morceau."""
         # self.check_name()
+        # print("status : ",self.mpd_client.get_status().get("state"))
         if self.progress != position: # TODO: vérifier le fonctionnement en détail
-            # print(position,self.progress)
-            self.progress = position
-            self.update()  # Redessiner la barre d'onde
+            stat = self.mpd_client.get_status().get("state")
+            if stat == "play":
+                print("play")
+                self.progress = position
+                self.update()  # Redessiner la barre d'onde
+            elif stat == 'stop':
+                self.waveform_resized = np.linspace(0.0, 0.01, self.num_bars)
+                print('stop')
+                self.update()
 
     def check_waveform_ready(self):
         """Vérifie si la forme d'onde est prête dans la queue."""
@@ -195,7 +204,10 @@ class WaveformProgressBar(QWidget):
 
         # Envoyer la position à MPD
         try:
+            self.mpd_client.pause()
+            sleep(0.2) # TODO: trouver une autre solution
             self.mpd_client.set_progress(new_position)
+            self.mpd_client.pause()
             print(f"Position de lecture mise à jour : {new_position}s")
         except Exception as e:
             print(f"Erreur lors de la mise à jour de la position de lecture : {e}")

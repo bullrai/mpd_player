@@ -5,6 +5,7 @@ from PySide6.QtGui import QPainter, QMouseEvent, QWheelEvent, QColor
 from PySide6.QtCore import Qt, QRectF
 from app.mpd.mpd_client import MPDClientWrapper
 from app.mpd.volume import VolumeControl
+from app.utils.config_loader import config_instance
 
 
 class VolumeWidget(QWidget):
@@ -15,6 +16,9 @@ class VolumeWidget(QWidget):
         self.volume = self.volume_control.get_volume() # Volume initial
         self.bar_count = 20  # Nombre de barres pour représenter le volume
         self.is_dragging = False  # Indique si la souris est maintenue enfoncée
+        self.color_volume_fond = config_instance.data["colors"]["volume_fond"]
+        self.color_volume = config_instance.data["colors"]["volume"]
+
 
 
         # self.setFixedHeight(30)
@@ -45,11 +49,13 @@ class VolumeWidget(QWidget):
             height = base_height *i
             rect = QRectF(x + spacing, y, bar_width - spacing, -height)
             if i < active_bars:
-                painter.setBrush(QColor("#cb28cb"))  # Barres actives
+                painter.setBrush(QColor(self.color_volume))  # Barres actives
             else:
-                painter.setBrush(QColor("#888888"))  # Barres inactives
+                painter.setBrush(QColor(self.color_volume_fond))  # Barres inactives
             painter.setPen(Qt.NoPen)
             painter.drawRect(rect)
+
+
 
 
 

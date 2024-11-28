@@ -174,8 +174,8 @@ class BrowserTab(QWidget):
                                 padding: 4px;  /* Ajoute un espacement vertical et horizontal */
                             }
                             QTreeView {
-                               font-family: "Arial";
-                               font-size: 14px;
+                               
+                               /*font-size: 14px;*/
                                color: #ffffff;
                                background-color: transparent;
                                alternate-background-color: transparent;

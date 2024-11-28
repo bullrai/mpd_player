@@ -7,27 +7,28 @@ from PySide6.QtGui import QFontDatabase, QFont
 from PySide6.QtCore import Qt, QPoint
 from app.utils.config_loader import config_instance
 
-def setup_button_style(buttons, color1, color2, size=QSize(32,32)):
+def setup_button_style(button, color1, color2, font, font_size, size=[32,32]):
     """Applique le style de base aux boutons."""
 
-    sizeb = size
+    width = size[0]
+    height = size[1]
+    height_button = height -12
+    QSize()
+    button.setStyleSheet(f"""
+        QPushButton {{
+            background-color: transparent;
+            color: {color1};
+            border: none;
+            font-size: {font_size}px;
+            font-family: {font};
+            width: {width}px;   /* Largeur fixe du bouton */
+            height: {height}px;   /* Hauteur fixe du bouton */
+        }}
+        QPushButton:hover {{
+            color: {color2};
 
-    for button in buttons:
-        button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: transparent;
-                color: {color1};
-                border: none;
-                font-size: 20px;
-                font-family: Untitled1;
-                width: 20px;   /* Largeur fixe du bouton */
-                height: 20px;   /* Hauteur fixe du bouton */
-            }}
-            QPushButton:hover {{
-                color: {color2};
-
-            }}
-        """)
+        }}
+    """)
         # button.setFixedSize(30,20)
         # button.setFixedWidth(20)
 
@@ -38,10 +39,17 @@ class CustomTitleBar(QWidget):
         # self.setStyleSheet("background-color: #6A0DAD;")  # Couleur de fond de la barre
         QFontDatabase.addApplicationFont("app/assets/images/Untitled1.ttf")
 
-        font_player = QFont("Untitled1", 24)  # Nom de votre police
+        font_player = "Untitled1"  # Nom de votre police
         font = config_instance.data["font"]["family"]
+        font_size = config_instance.data["font"]["size"]
         text_secondary = config_instance.data["colors"]["text_secondary"]
         text_primary = config_instance.data["colors"]["text_primary"]
+        button_close = config_instance.data["colors"]["button_close"]
+        button_close_hove = config_instance.data["colors"]["button_close_hove"]
+        button_maximize = config_instance.data["colors"]["button_close"]
+        button_maximize_hove = config_instance.data["colors"]["button_close_hove"]
+        button_minimize = config_instance.data["colors"]["button_close"]
+        button_minimize_hove = config_instance.data["colors"]["button_close_hove"]
 
         # Création du layout principal
         layout = QHBoxLayout(self)
@@ -50,25 +58,29 @@ class CustomTitleBar(QWidget):
         # self.setFixedHeight(32)
 
 
-        # Boutons de gauche
-        self.left_button_1 = QPushButton("Left 1")
-        self.left_button_2 = QPushButton("Left 2")
-        self.left_button_3 = QPushButton("Left 3")
-        setup_button_style([self.left_button_1, self.left_button_2, self.left_button_3], text_primary, text_secondary, QSize(50,32))
-
-        # Ajouter les boutons de gauche au layout
+        # Boutons de gauche #TODO: menu(mpd,réglage...)
+        self.left_button_1 = QPushButton("PyMPDM")
+        setup_button_style(self.left_button_1, text_primary, text_secondary, font, 14,  [90,32])
         layout.addWidget(self.left_button_1)
-        layout.addWidget(self.left_button_2)
-        layout.addWidget(self.left_button_3)
+        # self.left_button_2 = QPushButton("Left 2")
+        # setup_button_style(self.left_button_2, text_primary, text_secondary, font, font_size, [50,32])
+        # layout.addWidget(self.left_button_2)
+        # self.left_button_3 = QPushButton("Left 3")
+        # setup_button_style(self.left_button_3, text_primary, text_secondary, font, font_size, [50,32])
+        # layout.addWidget(self.left_button_3)
+
+
 
         # Ajouter un espace extensible au centre pour séparer les boutons de gauche et de droite
         layout.addStretch()
 
         # Boutons de droite (fermer, minimiser, maximiser)
         self.minimize_button = QPushButton("\u0049")
+        setup_button_style(self.minimize_button, button_minimize, button_minimize_hove, font_player, 20, [32,32])
         self.maximize_button = QPushButton("\u004a")
+        setup_button_style(self.maximize_button, button_maximize, button_maximize_hove, font_player, 20, [32,32])
         self.close_button = QPushButton("\u004b")
-        setup_button_style([self.minimize_button, self.maximize_button, self.close_button], text_primary, text_secondary, QSize(32,32))
+        setup_button_style(self.close_button, button_close, button_close_hove, font_player, 20, [32,32])
 
         # Ajouter les boutons de droite au layout
         layout.addWidget(self.minimize_button)

@@ -36,13 +36,13 @@ class MainWindow(QMainWindow):
         QFontDatabase.addApplicationFont("app/assets/images/Untitled1.ttf")
         background_color = config_instance.data["colors"]["background"]
         border_window = config_instance.data["colors"]["border_window"]
-        font = config_instance.data["font"]["family"]
+
         font_player = QFont("Untitled1", 24)
         player_button = config_instance.data["colors"]["player_button"]
         player_button_hover = config_instance.data["colors"]["player_button_hover"]
 
         # Configuration de la fenêtre principale
-        self.setWindowTitle("Lecteur Audio MPD")
+        self.setWindowTitle("PyMPDM")
         self.resize(350, 600)
         #
         # self.adjustSize()

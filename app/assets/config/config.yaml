@@ -4,7 +4,8 @@ colors:
   library_text: "#ffffff"
   library_selected: "#cb28cb"
   library_text_selected: "#181318"
-  volume: "#ffffff"
+  volume: "#cb28cb"
+  volume_fond: "#888888"
   song_tittle: "#ffffff"
   border_window: "#cb28cb"
   progress_bar: "#ff00ff"
@@ -20,15 +21,20 @@ colors:
   playlist_header_line: "#ffffff"
   player_button: "#ffffff"
   player_button_hover : "#cb28cb"
-#  button_play:
-#  button_play_hover: "#ffffff"
-#  button_stop: "#cb28cb"
-#  button_stop_hover: "#ffffff"
-#  button_next: "#cb28cb"
-#  button_next_hover: "#ffffff"
-#  button_prev: "#cb28cb"
-#  button_prev_hover: "#ffffff"
-#  button_pause: "#cb28cb"
+  button_stop: "#ffffff"
+  button_stop_hover: "#cb28cb"
+  button_next: "#ffffff"
+  button_next_hover: "#cb28cb"
+  button_prev: "#ffffff"
+  button_prev_hover: "#cb28cb"
+  button_pause: "#ffffff"
+  button_close: "#ffffff"
+  button_close_hove: "#cb28cb"
+  button_maximize: "#ffffff"
+  button_maximize_hove: "#cb28cb"
+  button_minimize: "#ffffff"
+  button_minimize_hove: "#cb28cb"
+
   colonne_text_colors:
     track: "#FFA500"
     title: "#cb28cb"
@@ -42,7 +48,7 @@ colors:
 # Style de police et tailles
 font:
   family: "Montserrat"
-  size: 12
+  size: 10
 
 
 # Largeur des colonnes

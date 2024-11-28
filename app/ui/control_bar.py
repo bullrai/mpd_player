@@ -26,35 +26,35 @@ image_path = Path("app/assets/images")
 
 
 
-def setup_button_style(buttons, font_player, size, color, hover_color ):
+def setup_button_style(button, font_player, size, color, hover_color ):
     """Applique le style de base aux boutons."""
 
     colorz = color
     colorz_hover = hover_color
-    sizep = size
+    sizep = size + 1
+    font = font_player
 
-    for button in buttons:
-        button.setStyleSheet(f"""
-            QPushButton {{
-                font-size: {sizep}px;  /* Taille de la police en pixels */
-                font-family: Untitled1;
-                
-                color: {colorz};
-                border: none;
-                
-                width: {sizep}px;   /* Largeur fixe du bouton */
-                height: {sizep}px;   /* Hauteur fixe du bouton */
-            }}
-            QPushButton:hover {{
-                color: {colorz_hover};
 
-            }}
-        """)
-        button.setFixedSize(sizep,sizep)
+    button.setStyleSheet(f"""
+        QPushButton {{
+            font-size: {size}px;  /* Taille de la police en pixels */
+            font-family: {font_player};
+            
+            color: {colorz};
+            border: none;
+            
+            width: {sizep}px;   /* Largeur fixe du bouton */
+            height: {sizep}px;   /* Hauteur fixe du bouton */
+        }}
+        QPushButton:hover {{
+            color: {colorz_hover};
+
+        }}
+    """)
+        # button.setFixedSize(sizep,sizep)
         # button.setFont(font_player)
         # button.setFixedSize(sizep,sizep)
-        if button == "play_button":
-            print("play_button")
+
         # button.setFixedWidth(20)
 
 
@@ -75,8 +75,16 @@ class ControlBar(QWidget):
 
         QFontDatabase.addApplicationFont("app/assets/images/Untitled1.ttf")
 
-        font_player = QFont("Untitled1", 24)  # Nom de votre police
-        font = config_instance.data["font"]["family"]
+        font_player = "Untitled1"  # Nom de votre police
+
+        button_play = config_instance.data["colors"]["player_button"]
+        button_play_hover = config_instance.data["colors"]["player_button_hover"]
+        button_stop = config_instance.data["colors"]["button_stop"]
+        button_stop_hover = config_instance.data["colors"]["button_stop_hover"]
+        button_next = config_instance.data["colors"]["button_next"]
+        button_next_hover = config_instance.data["colors"]["button_next_hover"]
+        button_prev = config_instance.data["colors"]["button_prev"]
+        button_prev_hover = config_instance.data["colors"]["button_prev_hover"]
         button_play = config_instance.data["colors"]["player_button"]
         button_play_hover = config_instance.data["colors"]["player_button_hover"]
         song_tittle = config_instance.data["colors"]["song_tittle"]
@@ -103,8 +111,8 @@ class ControlBar(QWidget):
         # self.song_title.setFixedSize(300, 20)
         self.song_title.setStyleSheet(f"""
                         QLabel {{
-                            font-family: {font};
-                            font-size: 16px;
+                            
+                            /* font-size: 16px; */
                             background-color: transparent;
                             color: {song_tittle};
                             border: none;
@@ -114,7 +122,7 @@ class ControlBar(QWidget):
         song_layout.addWidget(self.song_title)
         main_layout.addLayout(song_layout)
         self.volume_widget = VolumeWidget(self.mpd_client)
-        self.volume_widget.setStyleSheet("background-color: red")
+
         song_layout.addWidget(self.volume_widget)
 
         main_layout.addSpacing(10)
@@ -125,17 +133,21 @@ class ControlBar(QWidget):
 
         # Boutons de contrôle avec tailles spécifiques
         self.previous_button = QPushButton("\u0044")
+        setup_button_style(self.previous_button, font_player, 30, button_prev, button_prev_hover)
+
         self.stop_button = QPushButton("\u0043")
+        setup_button_style(self.stop_button, font_player, 30, button_stop, button_stop_hover)
 
 
         # Bouton Play plus grand
         self.play_button = QPushButton("\u0041")
-        setup_button_style([self.play_button], font_player, 42, button_play, button_play_hover)
+        setup_button_style(self.play_button, font_player, 42, button_play, button_play_hover)
 
         self.pause_button = QPushButton("\u0042")
+        setup_button_style(self.pause_button, font_player, 30, button_play, button_play_hover)
+
         self.next_button = QPushButton("\u0045")
-        setup_button_style([self.previous_button, self.stop_button,
-                            self.pause_button, self.next_button], font_player, 30, button_play, button_play_hover)
+        setup_button_style(self.next_button, font_player, 30, button_next, button_next_hover)
 
 
 
@@ -176,13 +188,15 @@ class ControlBar(QWidget):
         self.volume_box = QHBoxLayout()
 
         self.playlist_button = QPushButton("\u0046")
+        setup_button_style(self.playlist_button, font_player, 30, button_play, button_play_hover)
         self.playlist_button.clicked.connect(mpd_client.next_track)
+
         self.shuffle_button = QPushButton("\u0048")
         self.shuffle_button.clicked.connect(mpd_client.next_track)
+        setup_button_style(self.shuffle_button, font_player, 30, button_play, button_play_hover)
         self.repeat_button = QPushButton("\u0047")
         self.repeat_button.clicked.connect(mpd_client.next_track)
-        setup_button_style([self.playlist_button, self.shuffle_button,
-                            self.repeat_button], font_player, 30, button_play, button_play_hover)
+        setup_button_style(self.repeat_button, font_player, 30, button_play, button_play_hover)
         self.volume_box.addWidget(self.playlist_button)
         self.volume_box.addWidget(self.shuffle_button)
         self.volume_box.addWidget(self.repeat_button)
@@ -195,7 +209,7 @@ class ControlBar(QWidget):
         # self.volume_button.setStyleSheet(f"""
         #         QPushButton {{
         #             color: {color_volume};
-        #             font-family: {font};
+        #
         #             background-color: transparent;
         #             border: none;
         #         }}
