@@ -13,6 +13,7 @@ colors:
   text_primary: white
   text_secondary: "#cb28cb"
   selected_text: "#181318"
+  playlist_current_song: "#28cb29"
   background: "#1E1E1E"
   header_background: "#282828"
   background_button: "#333333"
@@ -43,6 +44,7 @@ colors:
     time: "#c9cb28"
     pos: "#FFA500"
 
+playlist_mode: "mini"           # classic, mini, kle, max,
 #hie_colonne_playlist:
 #  - ID
 # Style de police et tailles

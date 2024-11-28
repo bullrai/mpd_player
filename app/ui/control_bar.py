@@ -66,13 +66,14 @@ class ControlBar(QWidget):
         self.mpd_client = mpd_client
         self.volume_control = VolumeControl(self.mpd_client)
 
-        # Dans MainWindow ou un autre composant principal
+        # Init le changement de music
         self.music_manager = MusicStateManager(self.mpd_client)
         self.music_manager.song_changed.connect(self.update_song_title)
 
         # Démarrer la surveillance
         self.music_manager.start_monitoring()
 
+        # Init font image
         QFontDatabase.addApplicationFont("app/assets/images/Untitled1.ttf")
 
         font_player = "Untitled1"  # Nom de votre police
@@ -85,8 +86,6 @@ class ControlBar(QWidget):
         button_next_hover = config_instance.data["colors"]["button_next_hover"]
         button_prev = config_instance.data["colors"]["button_prev"]
         button_prev_hover = config_instance.data["colors"]["button_prev_hover"]
-        button_play = config_instance.data["colors"]["player_button"]
-        button_play_hover = config_instance.data["colors"]["player_button_hover"]
         song_tittle = config_instance.data["colors"]["song_tittle"]
         color_volume = config_instance.data["colors"]["volume"]
 

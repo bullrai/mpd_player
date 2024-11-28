@@ -8,6 +8,8 @@ from PySide6.QtWidgets import QTableView, QHeaderView, QProxyStyle, QStyleOption
 from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex
 from PySide6.QtGui import QColor, QBrush, QFont
 from .config_loader import config_instance
+from app.mpd.mpd_client import MPDClientWrapper
+from app.mpd.music_state_manager import MusicStateManager
 
 
 class CustomHeaderView(QHeaderView):
@@ -57,13 +59,19 @@ class CustomHeaderView(QHeaderView):
 class PlaylistTableModel(QAbstractTableModel):
     def __init__(self, playlist_data, headers,  background_color, header_background,
                                         text_color,selected_playlist, selected_text,
-                                        colonne_text_colors,playlist_header_line, font):
+                                        colonne_text_colors,playlist_header_line, font, playlist_current_song):
         super().__init__()
         self.headers = headers
         self.playlist_data = self.transform_data(playlist_data, headers)  # Transformation des données
         self.font = font
         self.text_color = text_color
         self.colonne_text_colors = colonne_text_colors
+        self.mpd_client = MPDClientWrapper()
+        self.current_track = int(self.mpd_client.get_status().get("song"))  # Position ou ID du morceau joué
+        self.playlist_current_song = playlist_current_song
+
+
+
 
 
     def transform_data(self, playlist_data, headers):
@@ -97,6 +105,8 @@ class PlaylistTableModel(QAbstractTableModel):
 
         # print(f"Traitement de la cellule - Ligne: {row}, Colonne: {col}, Clé: {column_key}")
 
+
+
         # Texte de chaque cellule
         if role == Qt.DisplayRole:
             value = track.get(column_key, "N/A")  # "N/A" si la clé est absente
@@ -109,12 +119,22 @@ class PlaylistTableModel(QAbstractTableModel):
             # print(f"Valeur affichée: {value}")
             return value
 
+        # # Style personnalisé pour la piste en cours
+        # if role == Qt.BackgroundRole and row == self.current_track:
+        #     value = track.get(column_key, "N/A")
+        #     print("row + role: ", value)
+        #     return QBrush(QColor("#FFD700"))  # Jaune doré
+
+
         # Personnalisation des couleurs par colonne
         if role == Qt.ForegroundRole:
-            # Obtenez le titre de la colonne en fonction de l'index de la colonne
-            column_title = self.headers[col].lower()
-            # Récupérez la couleur associée à ce titre dans `colonne_text_colors`
-            color = self.colonne_text_colors.get(column_title, self.text_color)  # Couleur par défaut noire si absente
+            if row == self.current_track:
+                color = self.playlist_current_song
+            else:
+                # Obtenez le titre de la colonne en fonction de l'index de la colonne
+                column_title = self.headers[col].lower()
+                # Récupérez la couleur associée à ce titre dans `colonne_text_colors`
+                color = self.colonne_text_colors.get(column_title, self.text_color)  # Couleur par défaut noire si absente
             return QBrush(QColor(color))
 
         # Fond alterné pour les lignes, mais avec une couleur de fond par défaut cohérente
@@ -140,6 +160,10 @@ class PlaylistTableModel(QAbstractTableModel):
             return self.headers[section]
         return None
 
+    def update_current_song(self):
+        self.beginResetModel()
+        self.current_track = int(self.mpd_client.get_status().get("song"))
+        self.endResetModel()
 
 
     def update_playlist(self, new_playlist_data):
@@ -152,9 +176,16 @@ class StyledPlaylistTableView(QTableView):
     def __init__(self, playlist_data, header=None, column_widths=None, column_modes=None):
         super().__init__()
         print()
-        header = ["Pos", "Title", "Time"]
-        column_widths = [30, 150, 60]
-        column_modes = ["fixed", "stretch", "fixed"]
+        playlist_mode = config_instance.data["playlist_mode"]
+        header_choix = {"classic":[["Pos", "Title", "Time"], [30, 150, 60], ["fixed", "stretch", "fixed"]],
+                        "mini":[["Title", "Time"],[150, 60], ["stretch", "fixed"]],
+                        "kle":[["Artist", "Title", "Time"],[50, 150, 60], ["ResizeToContents", "stretch", "fixed"]],
+                        "max":[["Artist", "Album", "Title", "Time"],[50,50,150,60], ["ResizeToContents", "ResizeToContents", "stretch", "fixed"]]}
+        header = header_choix.get(playlist_mode)[0]
+
+        column_widths = header_choix.get(playlist_mode)[1]
+
+        column_modes = header_choix.get(playlist_mode)[2]
 
         background_color = config_instance.data["colors"]["background"]
         header_background = config_instance.data["colors"]["header_background"]
@@ -163,11 +194,53 @@ class StyledPlaylistTableView(QTableView):
         selected_playlist = config_instance.data["colors"]["selected_playlist"]
         selected_text = config_instance.data["colors"]["selected_text_playlist"]
         playlist_header_line = config_instance.data["colors"]["playlist_header_line"]
+        playlist_current_song = config_instance.data["colors"]["playlist_current_song"]
         font = config_instance.data["font"]["family"]
+
+        self.mpd_client = MPDClientWrapper()
+        # Init le changement de music
+
+
+        # Appliquer les styles avec les couleurs du fichier de configuration
+        self.setStyleSheet(f"""
+            /* Fond uniforme pour toutes les cellules */
+            QTableView {{
+                background-color: transparent;
+                gridline-color: transparent;
+                selection-background-color: {selected_playlist};
+                selection-color: {selected_text};
+                
+                border: none;
+            }}
+
+            /* Fond et bordure pour les en-têtes */
+            QHeaderView::section {{
+                background-color: {background_color};
+                color: {selected_text};
+                
+                border-bottom: 1px solid {playlist_header_line};
+            }}
+            QScrollBar:vertical {{
+               border: none;
+               background: transparent;
+               width: 8px;
+               margin: 0px 0px 0px 0px;
+            }}
+            QScrollBar::handle:vertical {{
+               background: #cb28cb;
+               min-height: 20px;
+               border-radius: 4px;
+            }}
+            /* Masquer les lignes des cellules */
+            QTableView::item {{
+                border: none;
+                border-right: none;
+            }}
+        """)
         # Initialisation du modèle de données
         self.model = PlaylistTableModel(playlist_data, header, background_color, header_background,
                                         text_color,selected_playlist, selected_text,
-                                        colonne_text_colors,playlist_header_line, font)
+                                        colonne_text_colors,playlist_header_line, font,playlist_current_song)
         self.setModel(self.model)
 
         # Configuration des en-têtes
@@ -192,32 +265,6 @@ class StyledPlaylistTableView(QTableView):
         # self.horizontalHeader().setStyle(CustomHeaderStyle())
 
 
-        # Appliquer les styles avec les couleurs du fichier de configuration
-        self.setStyleSheet(f"""
-            /* Fond uniforme pour toutes les cellules */
-            QTableView {{
-                background-color: transparent;
-                gridline-color: transparent;
-                selection-background-color: {selected_playlist};
-                selection-color: {selected_text};
-                
-                border: none;
-            }}
-
-            /* Fond et bordure pour les en-têtes */
-            QHeaderView::section {{
-                background-color: {background_color};
-                color: {selected_text};
-                
-                border-bottom: 1px solid {playlist_header_line};
-            }}
-
-            /* Masquer les lignes des cellules */
-            QTableView::item {{
-                border: none;
-                border-right: none;
-            }}
-        """)
 
     def set_column_widths(self, column_widths):
         """Définit les largeurs de colonne en fonction d'un dictionnaire de largeurs."""
@@ -243,4 +290,5 @@ class StyledPlaylistTableView(QTableView):
         self.model.update_playlist(new_playlist_data)
 
 
-
+    def update_current_song_view(self):
+        self.model.update_current_song()

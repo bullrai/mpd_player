@@ -58,7 +58,7 @@ class CustomTitleBar(QWidget):
         # self.setFixedHeight(32)
 
 
-        # Boutons de gauche #TODO: menu(mpd,réglage...)
+        # Boutons de gauche #TODO: menu(mpd,réglage,output...)
         self.left_button_1 = QPushButton("PyMPDM")
         setup_button_style(self.left_button_1, text_primary, text_secondary, font, 14,  [90,32])
         layout.addWidget(self.left_button_1)

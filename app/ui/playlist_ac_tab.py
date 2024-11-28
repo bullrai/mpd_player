@@ -1,9 +1,10 @@
 # app/ui/player_tab.py
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QListWidget
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, Slot
 from PySide6.QtGui import QKeyEvent
 from app.mpd.mpd_client import MPDClientWrapper
+from app.mpd.music_state_manager import MusicStateManager
 from app.utils.playlist_table_view import StyledPlaylistTableView
 import sys
 
@@ -12,6 +13,8 @@ class PlaylistAcTab(QWidget):
     def __init__(self, mpd_client: MPDClientWrapper):
         super().__init__()
         self.mpd_client = mpd_client
+        self.music_manager = MusicStateManager(self.mpd_client)
+
 
 
         # Configuration de la mise en page
@@ -25,7 +28,10 @@ class PlaylistAcTab(QWidget):
 
         # Connecter le signal de double-clic à la méthode de lecture
         self.playlist_view.doubleClicked.connect(self.play_selected_song)
-
+        #Connecte le signal
+        self.music_manager.song_changed.connect(self.update_current_song)
+        # Démarrer la surveillance
+        self.music_manager.start_monitoring()
 
         self.setLayout(self.layout)
 
@@ -43,8 +49,13 @@ class PlaylistAcTab(QWidget):
             print(f"Erreur lors de la récupération de la playlist : {e}", file=sys.stderr)
             self.playlist_data("Erreur lors de la récupération de la playlist.")
 
+    def update_current_song(self):
+        print("update ac tab")
+        self.playlist_view.update_current_song_view()
+
     def update_playlist(self):
         # self.playlist_view.clear()
+
         self.playlist_data = self.mpd_client.get_current_playlist()
         self.playlist_view.update_playlist_view(self.playlist_data)
 
