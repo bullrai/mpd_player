@@ -54,8 +54,11 @@ class WaveformProgressBar(QWidget):
         super().__init__(parent)
         self.mpd_client = mpd_client
         self.audio_file = audio_file
-        self.name_play = self.mpd_client.get_current_song().get("title")
-        self.duration = self.mpd_client.get_duration()
+        # self.queue = multiprocessing.Queue()
+        self.name_play = None if not self.audio_file else self.mpd_client.get_current_song().get("title")
+        dure = self.mpd_client.get_duration()
+        self.duration = dure if dure else 0
+
         print("duration : ",self.duration)
         self.progress = 0
         self.progress_0 = 0
@@ -70,24 +73,23 @@ class WaveformProgressBar(QWidget):
 
         self.is_dragging = False  # Indique si la souris est maintenue enfoncée
 
-        # Démarrer la surveillance
+        # Toujours initialiser la queue et les timers
+        self.queue = None  # Queue sera créée dynamiquement lorsque nécessaire
+        self.waveform_check_timer = QTimer(self)
+        self.waveform_check_timer.timeout.connect(self.check_waveform_ready)
+        self.waveform_check_timer.start(100)  # Vérification toutes les 100 ms
+
+        self.progress_update_timer = QTimer(self)
+        self.progress_update_timer.timeout.connect(self.update_progress)
+        self.progress_update_timer.start(1000)  # Mise à jour chaque seconde
+
+        # Gestion des changements de chanson
+        self.music_manager = MusicStateManager(self.mpd_client)
+        self.music_manager.song_changed.connect(self.check_name)
         self.music_manager.start_monitoring()
 
+        # Si un fichier audio est valide, démarrez la génération
         if audio_file and os.path.exists(audio_file):
-            # Queue pour récupérer la forme d'onde depuis le processus
-            self.queue = multiprocessing.Queue()
-            self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)
-            # Timer pour surveiller la fin de la génération de l'onde
-            self.waveform_check_timer = QTimer(self)
-            self.waveform_check_timer.timeout.connect(self.check_waveform_ready)
-            self.waveform_check_timer.start(100)  # Vérifie toutes les 100 ms
-
-            # Timer pour mettre à jour la progression de la lecture
-            self.progress_update_timer = QTimer(self)
-            self.progress_update_timer.timeout.connect(self.update_progress)
-            self.progress_update_timer.start(1000)  # Mise à jour chaque seconde
-
-            # Démarrer le processus de génération de la forme d'onde
             self.start_waveform_generation()
         else:
             self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)
@@ -107,42 +109,67 @@ class WaveformProgressBar(QWidget):
         if self.progress != position: # TODO: vérifier le fonctionnement en détail
             stat = self.mpd_client.get_status().get("state")
             if stat == "play":
-                print("play")
+                # print("play")
                 self.progress = position
                 self.update()  # Redessiner la barre d'onde
             elif stat == 'stop':
                 self.waveform_resized = np.linspace(0.0, 0.01, self.num_bars)
-                print('stop')
+                # print('stop')
                 self.update()
 
     def check_waveform_ready(self):
         """Vérifie si la forme d'onde est prête dans la queue."""
-        if not self.queue.empty():
-            self.waveform_resized = self.queue.get()  # Récupère la forme d'onde
-            self.update()  # Redessine la barre d'onde
+        if not self.queue:
+            print("Queue non initialisée.")
+            return
 
-            self.process.join()  # Attend la fin du processus
+        if not self.queue.empty():
+            self.waveform_resized = self.queue.get()
+            self.update()
+            self.process.join()      # Attend la fin du processus
 
     def start_waveform_generation(self):
         """Démarre le processus pour générer la forme d'onde."""
-        self.duration = self.mpd_client.get_duration()
-        self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)
+        if not self.audio_file or not os.path.exists(self.audio_file):
+            print("Erreur : fichier audio non disponible.")
+            self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)  # État neutre
+            self.update()
+            return
+
+        # Arrêter tout processus en cours
+        if hasattr(self, 'process') and self.process.is_alive():
+            self.process.terminate()
+            self.process.join()
+
+        # Créer une nouvelle queue
+        self.queue = multiprocessing.Queue()
+
+        # Démarrer le processus pour générer la forme d'onde
         self.process = multiprocessing.Process(
             target=generate_waveform_process,
             args=(self.audio_file, self.num_bars, self.queue)
         )
         self.process.start()
 
-
-
     def check_name(self):
         """Vérifie si le morceau a changé et régénère l'onde si nécessaire."""
-        current_name = self.mpd_client.get_current_song().get("title")
+        current_song = self.mpd_client.get_current_song()
+        current_name = current_song.get("title") if current_song else None
+
+        if not current_name:
+            print("Aucune chanson détectée.")
+            self.audio_file = None
+            self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)  # État par défaut
+            self.update()
+            return
+
         if self.name_play != current_name:
-            print("Nouveau morceau détecté. Mise à jour de la forme d'onde.")
+            print(f"Nouveau morceau détecté : {current_name}. Mise à jour de la forme d'onde.")
             self.name_play = current_name
-            self.audio_file = self.mpd_client.get_current_file()  # Met à jour le fichier audio actuel
-            self.start_waveform_generation()  # Recalcule l'onde pour le nouveau fichier
+            self.audio_file = self.mpd_client.get_current_file()
+
+            # Redémarrer le processus de génération d'onde
+            self.start_waveform_generation()
 
     def paintEvent(self, event):
         painter = QPainter(self)

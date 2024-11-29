@@ -76,5 +76,8 @@ class PlaylistAcTab(QWidget):
             current_index = self.playlist_view.selectionModel().currentIndex()
             if current_index.isValid():
                 self.play_selected_song(current_index)
+            # current_index = self.playlist_view.selectionModel().currentIndex()
+            # if current_index.isValid():
+            #     self.play_selected_song(current_index)
         else:
             super().keyPressEvent(event)

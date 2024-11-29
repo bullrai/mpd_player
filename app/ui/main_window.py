@@ -220,6 +220,8 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence(global_shortcuts.get("volume_down")), self).activated.connect(self.volume_down)
         QShortcut(QKeySequence(global_shortcuts.get("playlist")), self).activated.connect(self.show_playlistac)
         QShortcut(QKeySequence(global_shortcuts.get("library")), self).activated.connect(self.show_browser)
+        QShortcut(QKeySequence(global_shortcuts.get("clear_playlist")), self).activated.connect(self.clear_playlist)
+
 
         # Vous pouvez ajouter d'autres raccourcis spécifiques aux onglets ici
 
@@ -260,3 +262,6 @@ class MainWindow(QMainWindow):
         self.show_browser()
 
 
+    def clear_playlist(self):
+        self.mpd_client.clear_to_playlist_active()
+        self.playlistac_tab.update_playlist()

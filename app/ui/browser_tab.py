@@ -254,8 +254,8 @@ class BrowserTab(QWidget):
                 except Exception as e:
                     print(f"Erreur lors de l'ajout à la playlist : {e}")
             # Actualiser PlaylistAcTab après l'ajout
-            if self.playlist_ac_tab:
-                self.playlist_ac_tab.update_playlist()
+
+        self.playlist_ac_tab.update_playlist()
 
     def replace_playlist_with_selected(self):
         """Remplace la playlist active avec les éléments sélectionnés."""

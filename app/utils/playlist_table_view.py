@@ -1,6 +1,8 @@
 # playlist_table.py
 import sys
 from pathlib import Path
+from time import sleep
+
 import yaml
 # from networkx import config
 from yaml import safe_load
@@ -67,7 +69,10 @@ class PlaylistTableModel(QAbstractTableModel):
         self.text_color = text_color
         self.colonne_text_colors = colonne_text_colors
         self.mpd_client = MPDClientWrapper()
-        self.current_track = int(self.mpd_client.get_status().get("song"))  # Position ou ID du morceau joué
+        print(self.mpd_client.get_status().get("song"))
+        get_song = self.current_track = 0 if self.mpd_client.get_status().get("song") is None else int(self.mpd_client.get_status().get("song"))
+        print("get_song : ",get_song)
+        self.current_track = get_song  # Position ou ID du morceau joué
         self.playlist_current_song = playlist_current_song
 
 
@@ -111,6 +116,9 @@ class PlaylistTableModel(QAbstractTableModel):
         if role == Qt.DisplayRole:
             value = track.get(column_key, "N/A")  # "N/A" si la clé est absente
             if column_key == "time":
+                if value == "Durée inconnue": #TODO: corection en amont du problème , comme enlevé la piste
+                    value = 0
+                # print(" value : ",value)
                 seconds = int(value)
                 minutes = seconds // 60  # Calculate minutes
                 remaining_seconds = seconds % 60  # Calculate remaining seconds
@@ -161,8 +169,12 @@ class PlaylistTableModel(QAbstractTableModel):
         return None
 
     def update_current_song(self):
+        sleep(1)
         self.beginResetModel()
-        self.current_track = int(self.mpd_client.get_status().get("song"))
+        get_song = self.current_track = 0 if self.mpd_client.get_status().get("song") is None else int(
+            self.mpd_client.get_status().get("song"))
+        # print("get_song : ", get_song)
+        self.current_track = get_song  # Position ou ID du morceau joué
         self.endResetModel()
 
 
