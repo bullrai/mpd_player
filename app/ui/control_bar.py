@@ -200,20 +200,7 @@ class ControlBar(QWidget):
         self.volume_box.addWidget(self.shuffle_button)
         self.volume_box.addWidget(self.repeat_button)
 
-        # Bouton de volume # TODO: enlever le slider et le remplacer par un scroll
 
-        # self.volume_widget.setFixedHeight(50)
-        # self.volume_widget.setFixedWidth(50)
-        # self.volume_button.setFixedSize(100, 30)
-        # self.volume_button.setStyleSheet(f"""
-        #         QPushButton {{
-        #             color: {color_volume};
-        #
-        #             background-color: transparent;
-        #             border: none;
-        #         }}
-        #     """)
-        # self.volume_button.clicked.connect(self.show_volume_popup)
 
         ## Bouton resize
         # self.button_resize = QPushButton("resize")

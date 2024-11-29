@@ -9,6 +9,7 @@ from PySide6.QtGui import QPainter, QColor, QPen, QMouseEvent
 # from networkx import config
 from pydub import AudioSegment
 from app.mpd.mpd_client import MPDClientWrapper
+from app.mpd.volume import VolumeControl
 from app.utils.config_loader import config_instance
 from app.mpd.music_state_manager import MusicStateManager
 
@@ -53,6 +54,7 @@ class WaveformProgressBar(QWidget):
     def __init__(self, mpd_client:MPDClientWrapper, audio_file, duration, parent=None):
         super().__init__(parent)
         self.mpd_client = mpd_client
+        self.volume = VolumeControl(self.mpd_client)
         self.audio_file = audio_file
         # self.queue = multiprocessing.Queue()
         self.name_play = None if not self.audio_file else self.mpd_client.get_current_song().get("title")
@@ -130,6 +132,7 @@ class WaveformProgressBar(QWidget):
 
     def start_waveform_generation(self):
         """Démarre le processus pour générer la forme d'onde."""
+        self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)  # État par défaut
         if not self.audio_file or not os.path.exists(self.audio_file):
             print("Erreur : fichier audio non disponible.")
             self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)  # État neutre
@@ -220,21 +223,23 @@ class WaveformProgressBar(QWidget):
         """Met à jour la position de lecture en fonction de la position de la souris."""
         # Calculer la progression en fonction de la position de la souris
         relative_position = x / self.width()
-        print("relative_position : ",self.duration)
+        # print("relative_position : ",self.duration)
         relative_position = max(0, min(1, relative_position))  # Limiter entre 0 et 1.
-        print("relative_position111 : ", relative_position)
+        # print("relative_position111 : ", relative_position)
         new_position = float(relative_position * self.duration)  # Position en secondes
-        print("new_position : ", relative_position)
+        # print("new_position : ", relative_position)
 
-        # Mettre à jour la progression
-        self.set_progress(relative_position)
+        # # Mettre à jour la progression
+        # self.set_progress(relative_position)
 
         # Envoyer la position à MPD
         try:
-            self.mpd_client.pause()
-            sleep(0.2) # TODO: trouver une autre solution
+
+            self.volume.fade_in_set_progress()
+            # Appliquer seekcur directement
             self.mpd_client.set_progress(new_position)
-            self.mpd_client.pause()
+            self.volume.fade_out_set_progress()
+
             print(f"Position de lecture mise à jour : {new_position}s")
         except Exception as e:
             print(f"Erreur lors de la mise à jour de la position de lecture : {e}")
