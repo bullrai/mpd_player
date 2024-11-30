@@ -140,6 +140,28 @@ class MainWindow(QMainWindow):
         # Raccourcis globaux
         self.setup_shortcuts()
 
+        # Raccourcis multimédias
+        self.play_pause_shortcut = QShortcut(QKeySequence(Qt.Key_MediaPlay), self)
+        self.play_pause_shortcut.activated.connect(self.handle_play_pause)
+
+        self.next_shortcut = QShortcut(QKeySequence(Qt.Key_MediaNext), self)
+        self.next_shortcut.activated.connect(self.handle_next)
+
+        self.previous_shortcut = QShortcut(QKeySequence(Qt.Key_MediaPrevious), self)
+        self.previous_shortcut.activated.connect(self.handle_previous)
+
+    def handle_play_pause(self):
+        self.mpd_client.pause()
+        print("Lecture/Pause détecté.")
+
+    def handle_next(self):
+        self.mpd_client.next_track()
+        print("Suivant détecté.")
+
+    def handle_previous(self):
+        self.mpd_client.previous_track()
+        print("Précédent détecté.")
+
     def toggle_content_layout(self):
         """Bascule entre cacher et afficher le content_layout."""
         self.is_content_hidden = not self.is_content_hidden  # Inverse l'état
@@ -155,7 +177,7 @@ class MainWindow(QMainWindow):
         if self.is_content_hidden:
             self.toggle_button.setText("Afficher Contenu")
             print("change size")
-            self.setFixedSize(350, 280)
+            self.setFixedSize(350, 277)
         else:
             self.toggle_button.setText("Cacher Contenu")
             self.setFixedSize(350, 500)
@@ -221,6 +243,9 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence(global_shortcuts.get("playlist")), self).activated.connect(self.show_playlistac)
         QShortcut(QKeySequence(global_shortcuts.get("library")), self).activated.connect(self.show_browser)
         QShortcut(QKeySequence(global_shortcuts.get("clear_playlist")), self).activated.connect(self.clear_playlist)
+        # QShortcut(QKeySequence(Qt.Key_MediaPlay), self).activated.connect(self.handle_play_pause)
+        # QShortcut(QKeySequence(Qt.Key_MediaNext), self).activated.connect(self.handle_next)
+        # QShortcut(QKeySequence(Qt.Key_MediaPrevious), self).activated.connect(self.handle_previous)
 
 
         # Vous pouvez ajouter d'autres raccourcis spécifiques aux onglets ici

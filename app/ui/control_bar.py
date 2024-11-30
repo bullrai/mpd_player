@@ -107,7 +107,7 @@ class ControlBar(QWidget):
         song_layout = QHBoxLayout()
 
         self.song_title = QLabel("tite du son")  # TODO : améliorer
-        # self.song_title.setFixedSize(300, 20)
+        self.song_title.setFixedSize(220, 18)
         self.song_title.setStyleSheet(f"""
                         QLabel {{
                             
