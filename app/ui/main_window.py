@@ -42,12 +42,12 @@ class MainWindow(QMainWindow):
         player_button_hover = config_instance.data["colors"]["player_button_hover"]
 
         # Configuration de la fenêtre principale
-        self.setWindowTitle("PyMPDM")
+        self.setWindowTitle("BooyahPlay")
         self.resize(350, 600)
         #
         # self.adjustSize()
-        # self.setWindowFlags(Qt.FramelessWindowHint)  # Supprimer les bordures de la fenêtre
-        # self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setWindowFlags(Qt.FramelessWindowHint)  # Supprimer les bordures de la fenêtre
+        self.setAttribute(Qt.WA_TranslucentBackground)
         # self.setStyleSheet(f"""
         #             QMainWindow {{
         #                 background-color: {background_color};
@@ -61,8 +61,8 @@ class MainWindow(QMainWindow):
         main_widget.setStyleSheet(f"""
                     #Container {{
                         background-color: {background_color};
-                        /*border: 1px solid {border_window};
-                        border-radius: 10px;   Ajustez le rayon des coins */
+                        border: 1px solid {border_window};
+                        border-radius: 10px;   /*Ajustez le rayon des coins */
                         
                     }}
                 """)

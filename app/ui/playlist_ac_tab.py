@@ -32,7 +32,7 @@ class PlaylistAcTab(QWidget):
         self.music_manager.song_changed.connect(self.update_current_song)
         # Démarrer la surveillance
         self.music_manager.start_monitoring()
-
+        print(self.playlist_data)
         self.setLayout(self.layout)
 
     def init_playlist(self):

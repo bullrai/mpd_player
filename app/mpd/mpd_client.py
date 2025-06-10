@@ -177,6 +177,7 @@ class MPDClientWrapper:
         """
         try:
             playlist = self.client.playlistinfo()  # Récupère la playlist active
+            print("playlist : ", playlist)
             formatted_playlist = []
             for song in playlist:
                 title = resolve_song_title(song)  # Résout le titre pour chaque chanson
@@ -189,6 +190,7 @@ class MPDClientWrapper:
                     'pos': song.get('pos', 'Position inconnue'),
                     'id': song.get('id', 'ID inconnu')
                 })
+            print("formatted_playlist : ", formatted_playlist)
             return formatted_playlist
         except Exception as e:
             print(f"Erreur lors de la récupération de la playlist : {e}")

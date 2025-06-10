@@ -59,7 +59,7 @@ class CustomTitleBar(QWidget):
 
 
         # Boutons de gauche #TODO: menu(mpd,réglage,output...)
-        self.left_button_1 = QPushButton("PyMPDM")
+        self.left_button_1 = QPushButton("BooyahPlay")
         setup_button_style(self.left_button_1, text_primary, text_secondary, font, 14,  [90,32])
         layout.addWidget(self.left_button_1)
         # self.left_button_2 = QPushButton("Left 2")

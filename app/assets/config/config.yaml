@@ -44,7 +44,7 @@ colors:
     time: "#c9cb28"
     pos: "#FFA500"
 
-playlist_mode: "mini"           # classic, mini, kle, max,
+playlist_mode: "classic"           # classic, mini, kle, max,
 #hie_colonne_playlist:
 #  - ID
 # Style de police et tailles

@@ -1,6 +1,7 @@
 # app/ui/browser_tab.py
 from PySide6.QtWidgets import QTreeView, QVBoxLayout, QWidget, QMenu
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from app.mpd.mpd_client import MPDClientWrapper
 
 
@@ -232,34 +233,45 @@ class BrowserTab(QWidget):
 
     def add_selected_to_playlist(self):
         """
-        Ajoute les éléments sélectionnés (fichiers uniquement) à la playlist.
-        Les éléments sont extraits du modèle `FileSystemModel`.
+        Ajoute les éléments sélectionnés (fichiers et dossiers) à la playlist.
         """
-        # Obtenez les indices sélectionnés dans le QTreeView
         selected_indexes = self.tree_view.selectionModel().selectedIndexes()
 
-        # Vérifiez que le modèle est un FileSystemModel
         if not isinstance(self.tree_view.model(), FileSystemModel):
             print("Le modèle actuel n'est pas un FileSystemModel.")
             return
 
-        # Parcourez les indices sélectionnés
-        for index in selected_indexes:
-            # Récupérez le nœud via l'index
-            node = index.internalPointer()  # internalPointer() retourne un FileNode
-            if node and not node.is_directory:  # Ajouter uniquement les fichiers
+        def add_files_recursively(node: FileNode):
+            """Ajoute tous les fichiers audio d’un nœud (récursivement)."""
+            if not node:
+                return
+
+            if node.is_directory:
+                # Charger les enfants s’ils ne sont pas encore chargés
+                if not node.loaded:
+                    self.tree_view.model().load_children(node)
+
+                for child in node.children:
+                    add_files_recursively(child)
+            else:
+                # C’est un fichier : on l’ajoute
                 try:
-                    self.mpd_client.add_to_playlist_active(node.path)  # Ajouter le chemin relatif à MPD
+                    self.mpd_client.add_to_playlist_active(node.path)
                     print(f"Ajouté à la playlist : {node.path}")
                 except Exception as e:
                     print(f"Erreur lors de l'ajout à la playlist : {e}")
-            # Actualiser PlaylistAcTab après l'ajout
+
+        for index in selected_indexes:
+            node = index.internalPointer()
+            add_files_recursively(node)
 
         self.playlist_ac_tab.update_playlist()
 
     def replace_playlist_with_selected(self):
         """Remplace la playlist active avec les éléments sélectionnés."""
+        print("replace playlist début")
         try:
+            print(self.mpd_client.get_current_playlist())
             self.mpd_client.clear_to_playlist_active()  # Vider la playlist active
             print("Playlist active effacée.")
             self.add_selected_to_playlist()  # Ajouter les nouveaux fichiers
@@ -269,36 +281,36 @@ class BrowserTab(QWidget):
 
 
 
-    # def setup_shortcuts(self):
-    #     """Configure les raccourcis pour la navigation clavier et l'ajout à la playlist."""
-    #     # Raccourci pour ajouter à la playlist avec la touche '0'
-    #     add_to_playlist_shortcut = QShortcut(QKeySequence("0"), self)
-    #     add_to_playlist_shortcut.activated.connect(self.add_selected_to_playlist)
+    def setup_shortcuts(self):
+        """Configure les raccourcis pour la navigation clavier et l'ajout à la playlist."""
+        # Raccourci pour ajouter à la playlist avec la touche '0'
+        add_to_playlist_shortcut = QShortcut(QKeySequence("0"), self)
+        add_to_playlist_shortcut.activated.connect(self.add_selected_to_playlist)
 
-    #     # Navigation dans la liste avec les flèches et les touches Entrée/Retour Arrière
-    #     self.setFocusPolicy(Qt.StrongFocus)
-    #
-    # def keyPressEvent(self, event):
-    #     """Gère les événements de touches pour la navigation dans la liste."""
-    #     if event.key() == Qt.Key_Down:
-    #         # Flèche Bas : se déplacer vers le bas dans la liste
-    #         next_row = (self.library_list.currentRow() + 1) % self.library_list.count()
-    #         self.library_list.setCurrentRow(next_row)
-    #     elif event.key() == Qt.Key_Up:
-    #         # Flèche Haut : se déplacer vers le haut dans la liste
-    #         previous_row = (self.library_list.currentRow() - 1) % self.library_list.count()
-    #         self.library_list.setCurrentRow(previous_row)
-    #     elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-    #         # Entrée : ouvrir le dossier ou sélectionner le fichier
-    #         current_item = self.library_list.currentItem()
-    #         if current_item:
-    #             self.open_directory_or_file(current_item)
-    #     elif event.key() == Qt.Key_Backspace:
-    #         # Retour Arrière : revenir au dossier parent
-    #         self.go_to_parent_directory()
-    #     else:
-    #         # Appel de la méthode parente pour les autres touches
-    #         super().keyPressEvent(event)
+        # Navigation dans la liste avec les flèches et les touches Entrée/Retour Arrière
+        self.setFocusPolicy(Qt.StrongFocus)
+
+    def keyPressEvent(self, event):
+        """Gère les événements de touches pour la navigation dans la liste."""
+        if event.key() == Qt.Key_Down:
+            # Flèche Bas : se déplacer vers le bas dans la liste
+            next_row = (self.library_list.currentRow() + 1) % self.library_list.count()
+            self.library_list.setCurrentRow(next_row)
+        elif event.key() == Qt.Key_Up:
+            # Flèche Haut : se déplacer vers le haut dans la liste
+            previous_row = (self.library_list.currentRow() - 1) % self.library_list.count()
+            self.library_list.setCurrentRow(previous_row)
+        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            # Entrée : ouvrir le dossier ou sélectionner le fichier
+            current_item = self.library_list.currentItem()
+            if current_item:
+                self.open_directory_or_file(current_item)
+        elif event.key() == Qt.Key_Backspace:
+            # Retour Arrière : revenir au dossier parent
+            self.go_to_parent_directory()
+        else:
+            # Appel de la méthode parente pour les autres touches
+            super().keyPressEvent(event)
 
 
 

@@ -20,12 +20,6 @@ from app.mpd.music_state_manager import MusicStateManager
 import os
 
 
-# Chemin global pour les images SVG
-image_path = Path("app/assets/images")
-
-
-
-
 def setup_button_style(button, font_player, size, color, hover_color ):
     """Applique le style de base aux boutons."""
 
