@@ -20,6 +20,7 @@ def generate_waveform_process(audio_file, num_bars, queue):
     try:
         # Charger le fichier audio avec pydub pour supporter plusieurs formats
         audio = AudioSegment.from_file(audio_file)
+        audio = audio.set_frame_rate(audio.frame_rate // 8)
 
         # Convertir en mono si nécessaire
         if audio.channels > 1:
@@ -28,9 +29,13 @@ def generate_waveform_process(audio_file, num_bars, queue):
         # Obtenir les données audio sous forme d'onde
         y = np.array(audio.get_array_of_samples(), dtype=np.float32)
 
-        # Calcul RMS avec gestion des NaN
-        hop_length = 512
-        rms = np.sqrt(np.convolve(y ** 2, np.ones(hop_length) / hop_length, mode='valid'))
+
+        hop_length = 512 # 256 , 128 , 256
+        y2 = y ** 2
+        cs = np.cumsum(y2, dtype=np.float32)
+        # cs[i] = somme y2[0..i]
+        # on veut fenêtré : (cs[i+hop] - cs[i]) / hop_length
+        rms = np.sqrt((cs[hop_length:] - cs[:-hop_length]) / hop_length)
 
         # Remplacer les NaN éventuels par 0 ou une petite valeur par défaut
         rms = np.nan_to_num(rms, nan=0.0, posinf=0.0, neginf=0.0)
@@ -106,8 +111,8 @@ class WaveformProgressBar(QWidget):
     def set_progress(self, position):
         """Met à jour la progression en fonction de la position du morceau."""
         # self.check_name()
-        if self.progress != position:
-            print(position, self.progress)
+        if self.progress != position:# TODO: vérivier le fonctionnement en détail
+            print("position : ", position, "progress : ", self.progress)
             self.progress = position
             self.update()  # Redessiner la barre d'onde
 
