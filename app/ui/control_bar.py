@@ -170,7 +170,7 @@ class ControlBar(QWidget):
         # # Initialiser la barre de progression d'onde avec le fichier audio et la durée
 
         # Créer et ajouter la barre de progression d'onde
-        self.waveform_bar = WaveformProgressBar(mpd_client, current_file, duration=duration)
+        self.waveform_bar = WaveformProgressBar(mpd_client, current_file, get_current_duration(self))
         self.waveform_bar.setFixedHeight(50)  # Hauteur ajustable pour assurer la visibilité
         main_layout.addWidget(self.waveform_bar)
         main_layout.addSpacing(5)

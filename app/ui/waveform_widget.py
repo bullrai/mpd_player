@@ -14,7 +14,7 @@ from app.utils.config_loader import config_instance
 from app.mpd.music_state_manager import MusicStateManager
 
 timer = QTimer
-
+# TODO : verifié quand il n'y as pas de music, si sa mouline dans le vent.
 def generate_waveform_process(audio_file, num_bars, queue):
     """Fonction de processus pour générer la forme d'onde avec scipy et numpy, avec gestion des NaN."""
     try:
@@ -51,17 +51,17 @@ def generate_waveform_process(audio_file, num_bars, queue):
 
 
 class WaveformProgressBar(QWidget):
-    def __init__(self, mpd_client:MPDClientWrapper, audio_file, duration, parent=None):
+    def __init__(self, mpd_client:MPDClientWrapper, audio_file, duration:float, parent=None):
         super().__init__(parent)
+
+        self.is_dragging = False
+
         self.mpd_client = mpd_client
         self.volume = VolumeControl(self.mpd_client)
         self.audio_file = audio_file
-        # self.queue = multiprocessing.Queue()
-        self.name_play = None if not self.audio_file else self.mpd_client.get_current_song().get("title")
-        dure = self.mpd_client.get_duration()
-        self.duration = dure if dure else 0
-
-        print("duration : ",self.duration)
+        self.name_play = self.mpd_client.get_current_song().get("title")
+        self.duration = self.mpd_client.get_duration()
+        print("duration : ", self.duration)
         self.progress = 0
         self.progress_0 = 0
         self.num_bars = 80
@@ -73,25 +73,24 @@ class WaveformProgressBar(QWidget):
         self.music_manager = MusicStateManager(self.mpd_client)
         self.music_manager.song_changed.connect(self.check_name)
 
-        self.is_dragging = False  # Indique si la souris est maintenue enfoncée
-
-        # Toujours initialiser la queue et les timers
-        self.queue = None  # Queue sera créée dynamiquement lorsque nécessaire
-        self.waveform_check_timer = QTimer(self)
-        self.waveform_check_timer.timeout.connect(self.check_waveform_ready)
-        self.waveform_check_timer.start(100)  # Vérification toutes les 100 ms
-
-        self.progress_update_timer = QTimer(self)
-        self.progress_update_timer.timeout.connect(self.update_progress)
-        self.progress_update_timer.start(1000)  # Mise à jour chaque seconde
-
-        # Gestion des changements de chanson
-        self.music_manager = MusicStateManager(self.mpd_client)
-        self.music_manager.song_changed.connect(self.check_name)
+        # Démarrer la surveillance
         self.music_manager.start_monitoring()
 
-        # Si un fichier audio est valide, démarrez la génération
         if audio_file and os.path.exists(audio_file):
+            # Queue pour récupérer la forme d'onde depuis le processus
+            self.queue = multiprocessing.Queue()
+            self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)
+            # Timer pour surveiller la fin de la génération de l'onde
+            self.waveform_check_timer = QTimer(self)
+            self.waveform_check_timer.timeout.connect(self.check_waveform_ready)
+            self.waveform_check_timer.start(100)  # Vérifie toutes les 100 ms
+
+            # Timer pour mettre à jour la progression de la lecture
+            self.progress_update_timer = QTimer(self)
+            self.progress_update_timer.timeout.connect(self.update_progress)
+            self.progress_update_timer.start(1000)  # Mise à jour chaque seconde
+
+            # Démarrer le processus de génération de la forme d'onde
             self.start_waveform_generation()
         else:
             self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)
@@ -107,47 +106,23 @@ class WaveformProgressBar(QWidget):
     def set_progress(self, position):
         """Met à jour la progression en fonction de la position du morceau."""
         # self.check_name()
-        # print("status : ",self.mpd_client.get_status().get("state"))
-        if self.progress != position: # TODO: vérifier le fonctionnement en détail
-            stat = self.mpd_client.get_status().get("state")
-            if stat == "play":
-                # print("play")
-                self.progress = position
-                self.update()  # Redessiner la barre d'onde
-            elif stat == 'stop':
-                self.waveform_resized = np.linspace(0.0, 0.01, self.num_bars)
-                # print('stop')
-                self.update()
+        if self.progress != position:
+            print(position, self.progress)
+            self.progress = position
+            self.update()  # Redessiner la barre d'onde
 
     def check_waveform_ready(self):
         """Vérifie si la forme d'onde est prête dans la queue."""
-        if not self.queue:
-            print("Queue non initialisée.")
-            return
-
         if not self.queue.empty():
-            self.waveform_resized = self.queue.get()
-            self.update()
-            self.process.join()      # Attend la fin du processus
+            self.waveform_resized = self.queue.get()  # Récupère la forme d'onde
+            self.update()  # Redessine la barre d'onde
+
+            self.process.join()  # Attend la fin du processus
 
     def start_waveform_generation(self):
         """Démarre le processus pour générer la forme d'onde."""
-        self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)  # État par défaut
-        if not self.audio_file or not os.path.exists(self.audio_file):
-            print("Erreur : fichier audio non disponible.")
-            self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)  # État neutre
-            self.update()
-            return
 
-        # Arrêter tout processus en cours
-        if hasattr(self, 'process') and self.process.is_alive():
-            self.process.terminate()
-            self.process.join()
-
-        # Créer une nouvelle queue
-        self.queue = multiprocessing.Queue()
-
-        # Démarrer le processus pour générer la forme d'onde
+        self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)
         self.process = multiprocessing.Process(
             target=generate_waveform_process,
             args=(self.audio_file, self.num_bars, self.queue)
@@ -155,24 +130,13 @@ class WaveformProgressBar(QWidget):
         self.process.start()
 
     def check_name(self):
-        """Vérifie si le morceau a changé et régénère l'onde si nécessaire."""
-        current_song = self.mpd_client.get_current_song()
-        current_name = current_song.get("title") if current_song else None
-
-        if not current_name:
-            print("Aucune chanson détectée.")
-            self.audio_file = None
-            self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)  # État par défaut
-            self.update()
-            return
-
+        """Vérifie si le morceau a changé et regénère l'onde si nécessaire."""
+        current_name = self.mpd_client.get_current_song().get("title")
         if self.name_play != current_name:
-            print(f"Nouveau morceau détecté : {current_name}. Mise à jour de la forme d'onde.")
+            print("Nouveau morceau détecté. Mise à jour de la forme d'onde.")
             self.name_play = current_name
-            self.audio_file = self.mpd_client.get_current_file()
-
-            # Redémarrer le processus de génération d'onde
-            self.start_waveform_generation()
+            self.audio_file = self.mpd_client.get_current_file()  # Met à jour le fichier audio actuel
+            self.start_waveform_generation()  # Recalcule l'onde pour le nouveau fichier
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -223,11 +187,12 @@ class WaveformProgressBar(QWidget):
         """Met à jour la position de lecture en fonction de la position de la souris."""
         # Calculer la progression en fonction de la position de la souris
         relative_position = x / self.width()
-        # print("relative_position : ",self.duration)
+        print("relative_position : ",self.duration)
         relative_position = max(0, min(1, relative_position))  # Limiter entre 0 et 1.
-        # print("relative_position111 : ", relative_position)
+        print("relative_position111 : ", relative_position)
+        print("duration : ", self.duration)
         new_position = float(relative_position * self.duration)  # Position en secondes
-        # print("new_position : ", relative_position)
+        print("new_position : ", relative_position)
 
         # # Mettre à jour la progression
         # self.set_progress(relative_position)

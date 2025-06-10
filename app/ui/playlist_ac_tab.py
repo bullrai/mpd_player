@@ -8,7 +8,7 @@ from app.mpd.music_state_manager import MusicStateManager
 from app.utils.playlist_table_view import StyledPlaylistTableView
 import sys
 
-
+#TODO : ajouter un suivi de la piste en lecture dans l'UI
 class PlaylistAcTab(QWidget):
     def __init__(self, mpd_client: MPDClientWrapper):
         super().__init__()
