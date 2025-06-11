@@ -60,6 +60,13 @@ class MPDClientWrapper:
         except Exception as e:
             print(f"Erreur en revenant à la piste précédente : {e}")
 
+    def shuffle(self):
+        """Passe en mode aléatoire."""
+        try:
+            self.client.shuffle()
+        except Exception as e :
+            print(f"Erreur en Shuffle : {e}")
+
     def set_volume(self, volume):
         """Définit le volume en fonction d'une valeur entre 0 et 100."""
         try:

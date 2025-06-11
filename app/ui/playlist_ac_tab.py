@@ -8,23 +8,19 @@ from app.mpd.music_state_manager import MusicStateManager
 from app.utils.playlist_table_view import StyledPlaylistTableView
 import sys
 
-#TODO : ajouter un suivi de la piste en lecture dans l'UI
+
 class PlaylistAcTab(QWidget):
     def __init__(self, mpd_client: MPDClientWrapper):
         super().__init__()
         self.mpd_client = mpd_client
         self.music_manager = MusicStateManager(self.mpd_client)
 
-
-
         # Configuration de la mise en page
         self.layout = QVBoxLayout()
-
 
         # Liste de la playlist
         self.playlist_view = StyledPlaylistTableView(self.init_playlist())
         self.layout.addWidget(self.playlist_view)
-
 
         # Connecter le signal de double-clic à la méthode de lecture
         self.playlist_view.doubleClicked.connect(self.play_selected_song)

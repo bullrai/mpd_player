@@ -70,13 +70,18 @@ class PlaylistTableModel(QAbstractTableModel):
         self.colonne_text_colors = colonne_text_colors
         self.mpd_client = MPDClientWrapper()
         print(self.mpd_client.get_status().get("song"))
-        get_song = self.current_track = 0 if self.mpd_client.get_status().get("song") is None else int(self.mpd_client.get_status().get("song"))
-        print("get_song : ",get_song)
-        self.current_track = get_song  # Position ou ID du morceau joué
+
+        self.current_track = self._fetch_current_index()  # Position ou ID du morceau joué
         self.playlist_current_song = playlist_current_song
 
 
-
+    def _fetch_current_index(self) -> int:
+        song = self.mpd_client.get_status().get("song")
+        return int(song)
+        # try:
+        #     return int(song)
+        # except (TypeError, ValueError):
+        #     return -1
 
 
     def transform_data(self, playlist_data, headers):
@@ -169,13 +174,18 @@ class PlaylistTableModel(QAbstractTableModel):
         return None
 
     def update_current_song(self):
-        sleep(1)
-        self.beginResetModel()
-        get_song = self.current_track = 0 if self.mpd_client.get_status().get("song") is None else int(
-            self.mpd_client.get_status().get("song"))
-        # print("get_song : ", get_song)
-        self.current_track = get_song  # Position ou ID du morceau joué
-        self.endResetModel()
+        new_idx = self._fetch_current_index()
+        if new_idx == self.current_track:
+            return
+        old_idx = self.current_track
+        self.current_track = new_idx
+        # On émet un dataChanged sur l’ancienne et la nouvelle ligne seulement
+        top_left_old = self.index(old_idx, 0)
+        bot_right_old = self.index(old_idx, self.columnCount() - 1)
+        top_left_new = self.index(new_idx, 0)
+        bot_right_new = self.index(new_idx, self.columnCount() - 1)
+        self.dataChanged.emit(top_left_old, bot_right_old, [Qt.ForegroundRole])
+        self.dataChanged.emit(top_left_new, bot_right_new, [Qt.ForegroundRole])
 
 
     def update_playlist(self, new_playlist_data):
@@ -261,6 +271,8 @@ class StyledPlaylistTableView(QTableView):
                  selected_playlist, selected_text, colonne_text_colors, font, self))
 
         self.verticalHeader().setVisible(False)  # Cacher les en-têtes de lignes
+        # fixer la hauteur de toutes les lignes à 32 pixels
+        self.verticalHeader().setDefaultSectionSize(20)
 
         # Désactiver l'édition
         self.setEditTriggers(QTableView.NoEditTriggers)
@@ -301,10 +313,9 @@ class StyledPlaylistTableView(QTableView):
         """Met à jour la vue avec de nouvelles données de playlist."""
         self.model.update_playlist(new_playlist_data)
 
-
     def update_current_song_view(self):
         self.model.update_current_song()
-
+        sid = int(self.mpd_client.get_status().get("song"))
         # Recentrer la piste courante au milieu du viewport (sans modifier la sélection)
-        current_index = self.model.index(self.model.current_track, 0)
+        current_index = self.model.index(sid, 0)
         self.scrollTo(current_index, QAbstractItemView.PositionAtCenter)

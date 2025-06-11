@@ -70,7 +70,7 @@ class ControlBar(QWidget):
         # Init font image
         QFontDatabase.addApplicationFont("app/assets/images/Untitled1.ttf")
 
-        font_player = "Untitled1"  # Nom de votre police
+        self.font_player = "Untitled1"  # Nom de votre police
 
         button_play = config_instance.data["colors"]["player_button"]
         button_play_hover = config_instance.data["colors"]["player_button_hover"]
@@ -85,7 +85,7 @@ class ControlBar(QWidget):
 
         # Récupérer le chemin complet du fichier audio en cours de lecture
         current_file = get_current_file(self)
-        duration = get_current_duration(self)
+        # duration = get_current_duration(self)
         # print('duration : ',duration)
         # print(f"Chemin complet du fichier audio en cours : {current_file}")
         # Initialiser les attributs pour éviter les avertissements
@@ -126,37 +126,49 @@ class ControlBar(QWidget):
 
         # Boutons de contrôle avec tailles spécifiques
         self.previous_button = QPushButton("\u0044")
-        setup_button_style(self.previous_button, font_player, 30, button_prev, button_prev_hover)
+        setup_button_style(self.previous_button, self.font_player, 30, button_prev, button_prev_hover)
 
         self.stop_button = QPushButton("\u0043")
-        setup_button_style(self.stop_button, font_player, 30, button_stop, button_stop_hover)
+        setup_button_style(self.stop_button, self.font_player, 30, button_stop, button_stop_hover)
 
         # Bouton Play plus grand
-        self.play_button = QPushButton("\u0041")
-        setup_button_style(self.play_button, font_player, 42, button_play, button_play_hover)
+        # self.play_button = QPushButton("\u0041")
+        # setup_button_style(self.play_button, self.font_player, 42, button_play, button_play_hover)
+        # 👉 Bouton unique Play/Pause
+        self.play_pause_button = QPushButton()
 
-        self.pause_button = QPushButton("\u0042")
-        setup_button_style(self.pause_button, font_player, 30, button_play, button_play_hover)
+        self._play_color = button_play
+        self._play_hover = button_play_hover
+        self.switch_icon()
+        # on stocke couleurs et taille par défaut pour le slot
+        # initialisation en mode « Play » (grosse icône)
+        setup_button_style(self.play_pause_button, self.font_player, 42, button_play, button_play_hover)  # :contentReference[oaicite:0]{index=0}
 
         self.next_button = QPushButton("\u0045")
-        setup_button_style(self.next_button, font_player, 30, button_next, button_next_hover)
+        setup_button_style(self.next_button, self.font_player, 30, button_next, button_next_hover)
+
+        self.shuffle_button = QPushButton("\u0048")
+
+        setup_button_style(self.shuffle_button, self.font_player, 30, button_play, button_play_hover)
 
         # Connecter les boutons aux fonctions du client MPD
         # self.shuffle_button.clicked.connect(lambda: print("Mélanger"))
         self.previous_button.clicked.connect(mpd_client.previous_track)
         self.stop_button.clicked.connect(mpd_client.stop)
-        self.play_button.clicked.connect(mpd_client.pause)
-        self.pause_button.clicked.connect(mpd_client.pause)
+        # self.play_button.clicked.connect(mpd_client.pause)
+        self.play_pause_button.clicked.connect(self.on_play_pause_clicked)
         self.next_button.clicked.connect(mpd_client.next_track)
+        self.shuffle_button.clicked.connect(mpd_client.shuffle)
         # self.repeat_button.clicked.connect(lambda: print("Répéter"))
 
         # Ajouter les boutons au layout de contrôle
         # control_layout.addWidget(self.shuffle_button)
         control_layout.addWidget(self.previous_button)
         control_layout.addWidget(self.stop_button)
-        control_layout.addWidget(self.play_button)  # Bouton Play plus grand
-        control_layout.addWidget(self.pause_button)
+        # control_layout.addWidget(self.play_button)  # Bouton Play plus grand
+        control_layout.addWidget(self.play_pause_button)
         control_layout.addWidget(self.next_button)
+        control_layout.addWidget(self.shuffle_button)
         # control_layout.addWidget(self.repeat_button)
         # Ajouter la barre de contrôle au layout principal
         main_layout.addLayout(control_layout)
@@ -178,15 +190,13 @@ class ControlBar(QWidget):
 
         # TODO : connecter les vrai fonction MPD
         self.playlist_button = QPushButton("\u0046")
-        setup_button_style(self.playlist_button, font_player, 30, button_play, button_play_hover)
+        setup_button_style(self.playlist_button, self.font_player, 30, button_play, button_play_hover)
         self.playlist_button.clicked.connect(mpd_client.next_track)
 
-        self.shuffle_button = QPushButton("\u0048")
-        self.shuffle_button.clicked.connect(mpd_client.next_track)
-        setup_button_style(self.shuffle_button, font_player, 30, button_play, button_play_hover)
+
         self.repeat_button = QPushButton("\u0047")
         self.repeat_button.clicked.connect(mpd_client.next_track)
-        setup_button_style(self.repeat_button, font_player, 30, button_play, button_play_hover)
+        setup_button_style(self.repeat_button, self.font_player, 30, button_play, button_play_hover)
         self.volume_box.addWidget(self.playlist_button)
         self.volume_box.addWidget(self.shuffle_button)
         self.volume_box.addWidget(self.repeat_button)
@@ -260,6 +270,26 @@ class ControlBar(QWidget):
         else:
             self.song_title.setText("Aucune chanson en lecture")
 
+
+    def on_play_pause_clicked(self):
+        """Inverse Play/Pause côté MPD."""
+        self.mpd_client.pause()
+        self.switch_icon()
+
+    def switch_icon(self):
+        state = self.mpd_client.get_status().get("state")
+        if state == "play":
+            glyph = "\u0041"
+        else:
+            glyph = "\u0042"
+        # Appliquer le texte et le style
+        self.play_pause_button.setText(glyph)
+        setup_button_style(self.play_pause_button,
+                           self.font_player,
+                           42,
+                           self._play_color,
+                           self._play_hover)
+
 def get_current_file(self):
     """
     Récupère le chemin complet du fichier audio en cours de lecture en utilisant MPD.
@@ -299,3 +329,4 @@ def get_current_duration(self):
     except Exception as e:
         print(f"Erreur lors de la récupération de la durée : {e}")
     return None
+
