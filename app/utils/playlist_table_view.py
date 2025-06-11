@@ -6,7 +6,7 @@ from time import sleep
 import yaml
 # from networkx import config
 from yaml import safe_load
-from PySide6.QtWidgets import QTableView, QHeaderView, QProxyStyle, QStyleOptionHeader, QStyle
+from PySide6.QtWidgets import QTableView, QHeaderView, QAbstractItemView, QProxyStyle, QStyleOptionHeader, QStyle
 from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex
 from PySide6.QtGui import QColor, QBrush, QFont
 from .config_loader import config_instance
@@ -304,3 +304,7 @@ class StyledPlaylistTableView(QTableView):
 
     def update_current_song_view(self):
         self.model.update_current_song()
+
+        # Recentrer la piste courante au milieu du viewport (sans modifier la sélection)
+        current_index = self.model.index(self.model.current_track, 0)
+        self.scrollTo(current_index, QAbstractItemView.PositionAtCenter)

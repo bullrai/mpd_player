@@ -36,8 +36,8 @@ class VolumeControl:
     def fade_out_set_progress(self):
         fade_duration = 0.1  # Durée totale du fade-in en secondes
         steps = 20  # Nombre d'étapes dans le fade
-        print("volume ac : ",self.volume_cache)
+        # print("volume ac : ",self.volume_cache)
         for volume in range(self.volume_cache+1):
-            print(volume)
+            # print(volume)
             self.set_volume(volume)
             time.sleep(fade_duration / steps)

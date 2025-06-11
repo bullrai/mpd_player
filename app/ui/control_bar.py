@@ -131,7 +131,6 @@ class ControlBar(QWidget):
         self.stop_button = QPushButton("\u0043")
         setup_button_style(self.stop_button, font_player, 30, button_stop, button_stop_hover)
 
-
         # Bouton Play plus grand
         self.play_button = QPushButton("\u0041")
         setup_button_style(self.play_button, font_player, 42, button_play, button_play_hover)
@@ -141,9 +140,6 @@ class ControlBar(QWidget):
 
         self.next_button = QPushButton("\u0045")
         setup_button_style(self.next_button, font_player, 30, button_next, button_next_hover)
-
-
-
 
         # Connecter les boutons aux fonctions du client MPD
         # self.shuffle_button.clicked.connect(lambda: print("Mélanger"))
@@ -170,7 +166,7 @@ class ControlBar(QWidget):
         # # Initialiser la barre de progression d'onde avec le fichier audio et la durée
 
         # Créer et ajouter la barre de progression d'onde
-        self.waveform_bar = WaveformProgressBar(mpd_client, current_file, get_current_duration(self))
+        self.waveform_bar = WaveformProgressBar(mpd_client, current_file)
         self.waveform_bar.setFixedHeight(50)  # Hauteur ajustable pour assurer la visibilité
         main_layout.addWidget(self.waveform_bar)
         main_layout.addSpacing(5)
@@ -180,6 +176,7 @@ class ControlBar(QWidget):
         # Créer la "volume_box" pour le titre de la chanson et le contrôle du volume
         self.volume_box = QHBoxLayout()
 
+        # TODO : connecter les vrai fonction MPD
         self.playlist_button = QPushButton("\u0046")
         setup_button_style(self.playlist_button, font_player, 30, button_play, button_play_hover)
         self.playlist_button.clicked.connect(mpd_client.next_track)

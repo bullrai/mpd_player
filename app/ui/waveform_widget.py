@@ -4,7 +4,7 @@ from time import sleep
 
 import numpy as np
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QTimer, Qt, QThread, Signal, Slot
 from PySide6.QtGui import QPainter, QColor, QPen, QMouseEvent
 # from networkx import config
 from pydub import AudioSegment
@@ -15,48 +15,44 @@ from app.mpd.music_state_manager import MusicStateManager
 
 timer = QTimer
 # TODO : verifié quand il n'y as pas de music, si sa mouline dans le vent.
-def generate_waveform_process(audio_file, num_bars, queue):
-    """Fonction de processus pour générer la forme d'onde avec scipy et numpy, avec gestion des NaN."""
-    try:
-        # Charger le fichier audio avec pydub pour supporter plusieurs formats
-        audio = AudioSegment.from_file(audio_file)
-        audio = audio.set_frame_rate(audio.frame_rate // 8)
+class WaveformWorker(QThread):
+    """Worker QThread qui calcule la forme d'onde et l'émet via un signal."""
+    waveformReady = Signal(object)  # émetera un array numpy (ou liste)
 
-        # Convertir en mono si nécessaire
-        if audio.channels > 1:
-            audio = audio.set_channels(1)
+    def __init__(self, audio_file: str, num_bars: int, parent=None):
+        super().__init__(parent)
+        self.audio_file = audio_file
+        self.num_bars = num_bars
 
-        # Obtenir les données audio sous forme d'onde
-        y = np.array(audio.get_array_of_samples(), dtype=np.float32)
+    def run(self):
+        try:
+            audio = AudioSegment.from_file(self.audio_file)
+            audio = audio.set_frame_rate(audio.frame_rate // 8)
+            if audio.channels > 1:
+                audio = audio.set_channels(1)
 
+            y = np.array(audio.get_array_of_samples(), dtype=np.float32)
+            hop_length = 512
+            y2 = y ** 2
+            cs = np.cumsum(y2, dtype=np.float32)
+            rms = np.sqrt((cs[hop_length:] - cs[:-hop_length]) / hop_length)
+            rms = np.nan_to_num(rms, nan=0.0, posinf=0.0, neginf=0.0)
+            if rms.max() > 0:
+                rms /= rms.max()
 
-        hop_length = 512 # 256 , 128 , 256
-        y2 = y ** 2
-        cs = np.cumsum(y2, dtype=np.float32)
-        # cs[i] = somme y2[0..i]
-        # on veut fenêtré : (cs[i+hop] - cs[i]) / hop_length
-        rms = np.sqrt((cs[hop_length:] - cs[:-hop_length]) / hop_length)
-
-        # Remplacer les NaN éventuels par 0 ou une petite valeur par défaut
-        rms = np.nan_to_num(rms, nan=0.0, posinf=0.0, neginf=0.0)
-
-        # Normaliser et redimensionner l'onde
-        if np.max(rms) > 0:
-            rms /= np.max(rms)  # Normaliser entre 0 et 1
-
-        waveform_resized = np.interp(
-            np.linspace(0, len(rms) - 1, num_bars),
-            np.arange(len(rms)),
-            rms
-        )
-        queue.put(waveform_resized)  # Met le résultat dans la queue
-    except Exception as e:
-        print(f"Erreur lors de la génération de la forme d'onde : {e}")
-        queue.put([])  # Retourne une liste vide en cas d'erreur
+            waveform_resized = np.interp(
+                np.linspace(0, len(rms) - 1, self.num_bars),
+                np.arange(len(rms)),
+                rms
+            )
+            self.waveformReady.emit(waveform_resized)
+        except Exception as e:
+            print(f"Erreur lors de WaveformWorker: {e}")
+            self.waveformReady.emit(np.zeros(self.num_bars, dtype=np.float32))
 
 
 class WaveformProgressBar(QWidget):
-    def __init__(self, mpd_client:MPDClientWrapper, audio_file, duration:float, parent=None):
+    def __init__(self, mpd_client:MPDClientWrapper, audio_file, parent=None):
         super().__init__(parent)
 
         self.is_dragging = False
@@ -65,8 +61,6 @@ class WaveformProgressBar(QWidget):
         self.volume = VolumeControl(self.mpd_client)
         self.audio_file = audio_file
         self.name_play = self.mpd_client.get_current_song().get("title")
-        self.duration = self.mpd_client.get_duration()
-        print("duration : ", self.duration)
         self.progress = 0
         self.progress_0 = 0
         self.num_bars = 80
@@ -82,20 +76,16 @@ class WaveformProgressBar(QWidget):
         self.music_manager.start_monitoring()
 
         if audio_file and os.path.exists(audio_file):
-            # Queue pour récupérer la forme d'onde depuis le processus
-            self.queue = multiprocessing.Queue()
+            # Initialisation de la forme
             self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)
-            # Timer pour surveiller la fin de la génération de l'onde
-            self.waveform_check_timer = QTimer(self)
-            self.waveform_check_timer.timeout.connect(self.check_waveform_ready)
-            self.waveform_check_timer.start(100)  # Vérifie toutes les 100 ms
+            self.worker = None
 
             # Timer pour mettre à jour la progression de la lecture
             self.progress_update_timer = QTimer(self)
             self.progress_update_timer.timeout.connect(self.update_progress)
-            self.progress_update_timer.start(1000)  # Mise à jour chaque seconde
+            self.progress_update_timer.start(500)  # Mise à jour chaque seconde
 
-            # Démarrer le processus de génération de la forme d'onde
+            # Lancer le calcul de waveform dans un QThread
             self.start_waveform_generation()
         else:
             self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)
@@ -116,23 +106,27 @@ class WaveformProgressBar(QWidget):
             self.progress = position
             self.update()  # Redessiner la barre d'onde
 
-    def check_waveform_ready(self):
-        """Vérifie si la forme d'onde est prête dans la queue."""
-        if not self.queue.empty():
-            self.waveform_resized = self.queue.get()  # Récupère la forme d'onde
-            self.update()  # Redessine la barre d'onde
+    @ Slot(object)
+    def on_waveform_ready(self, waveform):
+        """Slot appelé quand WaveformWorker a fini de calculer."""
 
-            self.process.join()  # Attend la fin du processus
+        self.waveform_resized = np.array(waveform, dtype=np.float32)
+        self.update()
 
     def start_waveform_generation(self):
-        """Démarre le processus pour générer la forme d'onde."""
+        # Si un worker tournait déjà, on l'arrête proprement
+        if hasattr(self, 'worker') and self.worker is not None:
+            if self.worker.isRunning():
+                self.worker.quit()
+                self.worker.wait()
 
+        # Réinitialisation visuelle
         self.waveform_resized = np.linspace(0.01, 0.01, self.num_bars)
-        self.process = multiprocessing.Process(
-            target=generate_waveform_process,
-            args=(self.audio_file, self.num_bars, self.queue)
-        )
-        self.process.start()
+
+        # Création et lancement du QThread
+        self.worker = WaveformWorker(self.audio_file, self.num_bars)
+        self.worker.waveformReady.connect(self.on_waveform_ready)
+        self.worker.start()
 
     def check_name(self):
         """Vérifie si le morceau a changé et regénère l'onde si nécessaire."""
@@ -191,12 +185,14 @@ class WaveformProgressBar(QWidget):
     def update_position_from_mouse(self, x):
         """Met à jour la position de lecture en fonction de la position de la souris."""
         # Calculer la progression en fonction de la position de la souris
+        duration = self.mpd_client.get_duration()
         relative_position = x / self.width()
-        print("relative_position : ",self.duration)
+        print("relative_position : ",relative_position)
         relative_position = max(0, min(1, relative_position))  # Limiter entre 0 et 1.
         print("relative_position111 : ", relative_position)
-        print("duration : ", self.duration)
-        new_position = float(relative_position * self.duration)  # Position en secondes
+        print("duration : ", duration)
+
+        new_position = float(relative_position * duration)  # Position en secondes
         print("new_position : ", relative_position)
 
         # # Mettre à jour la progression
